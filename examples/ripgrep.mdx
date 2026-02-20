@@ -1,0 +1,135 @@
+---
+title: Ripgrep Integration
+description: Integrate fzf with ripgrep for powerful text searching workflows
+---
+
+Integrate fzf with ripgrep for powerful text searching workflows. These examples show how to use ripgrep as the primary search engine while using fzf as an interactive interface.
+
+## Using fzf as Secondary Filter
+
+In this approach, ripgrep performs the initial search and fzf provides interactive fuzzy filtering on the results.
+
+<Note>
+**Requirements:**
+- [ripgrep](https://github.com/BurntSushi/ripgrep)
+- [bat](https://github.com/sharkdp/bat) for syntax highlighting
+</Note>
+
+```bash
+#!/usr/bin/env bash
+
+# 1. Search for text in files using Ripgrep
+# 2. Interactively narrow down the list using fzf
+# 3. Open the file in Vim
+rg --color=always --line-number --no-heading --smart-case "${*:-}" |
+  fzf --ansi \
+      --color "hl:-1:underline,hl+:-1:underline:reverse" \
+      --delimiter : \
+      --preview 'bat --color=always {1} --highlight-line {2}' \
+      --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
+      --bind 'enter:become(vim {1} +{2})'
+```
+
+**How it works:**
+
+- Ripgrep prints matching lines in the format: `file:line:content`
+- `{1}` and `{2}` represent the file path and line number respectively
+- `--ansi` tells fzf to parse color codes from ripgrep
+- The preview window shows the file with the matching line highlighted
+- Pressing Enter opens the file in Vim at the matching line
+
+## Interactive Ripgrep Launcher
+
+This more advanced example binds ripgrep to the `change` event, so ripgrep restarts with each keystroke, providing dynamic search results.
+
+```bash
+#!/usr/bin/env bash
+
+# 1. Search for text in files using Ripgrep
+# 2. Interactively restart Ripgrep with reload action
+# 3. Open the file in Vim
+RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+INITIAL_QUERY="${*:-}"
+fzf --ansi --disabled --query "$INITIAL_QUERY" \
+    --bind "start:reload:$RG_PREFIX {q} || true" \
+    --bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+    --delimiter : \
+    --preview 'bat --color=always {1} --highlight-line {2}' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
+    --bind 'enter:become(vim {1} +{2})'
+```
+
+**Key features:**
+
+- `--disabled` disables fzf's fuzzy matching (ripgrep does all the filtering)
+- `{q}` evaluates to the current query string in fzf
+- `sleep 0.1` provides "debouncing" to reduce intermediate processes
+- `|| true` prevents warning messages when ripgrep finds no matches
+
+## Switching Between Ripgrep and fzf Modes
+
+This advanced example allows you to toggle between ripgrep-powered search and fzf-only fuzzy filtering.
+
+```bash
+#!/usr/bin/env bash
+
+# Switch between Ripgrep mode and fzf filtering mode (CTRL-T)
+rm -f /tmp/rg-fzf-{r,f}
+RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+INITIAL_QUERY="${*:-}"
+fzf --ansi --disabled --query "$INITIAL_QUERY" \
+    --bind "start:reload:$RG_PREFIX {q}" \
+    --bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+    --bind 'ctrl-t:transform:[[ ! $FZF_PROMPT =~ ripgrep ]] &&
+      echo "rebind(change)+change-prompt(1. ripgrep> )+disable-search+transform-query:echo \{q} > /tmp/rg-fzf-f; cat /tmp/rg-fzf-r" ||
+      echo "unbind(change)+change-prompt(2. fzf> )+enable-search+transform-query:echo \{q} > /tmp/rg-fzf-r; cat /tmp/rg-fzf-f"' \
+    --color "hl:-1:underline,hl+:-1:underline:reverse" \
+    --prompt '1. ripgrep> ' \
+    --delimiter : \
+    --header 'CTRL-T: Switch between ripgrep/fzf' \
+    --preview 'bat --color=always {1} --highlight-line {2}' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
+    --bind 'enter:become(vim {1} +{2})'
+```
+
+**Usage:**
+
+- Start in ripgrep mode where your query is passed to ripgrep
+- Press `CTRL-T` to switch to fzf mode for fuzzy filtering on the current results
+- Press `CTRL-T` again to switch back to ripgrep mode
+- The query string is preserved when switching between modes
+
+## Simultaneous Ripgrep and fzf Search
+
+This example controls both ripgrep and fzf search simultaneously. The first word triggers ripgrep, and the rest is used for fzf filtering.
+
+```bash
+#!/usr/bin/env bash
+
+export TEMP=$(mktemp -u)
+trap 'rm -f "$TEMP"' EXIT
+
+INITIAL_QUERY="${*:-}"
+TRANSFORMER='
+  rg_pat={q:1}      # The first word is passed to ripgrep
+  fzf_pat={q:2..}   # The rest are passed to fzf
+
+  if ! [[ -r "$TEMP" ]] || [[ $rg_pat != $(cat "$TEMP") ]]; then
+    echo "$rg_pat" > "$TEMP"
+    printf "reload:sleep 0.1; rg --column --line-number --no-heading --color=always --smart-case %q || true" "$rg_pat"
+  fi
+  echo "+search:$fzf_pat"
+'
+fzf --ansi --disabled --query "$INITIAL_QUERY" \
+    --with-shell 'bash -c' \
+    --bind "start,change:transform:$TRANSFORMER" \
+    --color "hl:-1:underline,hl+:-1:underline:reverse" \
+    --delimiter : \
+    --preview 'bat --color=always {1} --highlight-line {2}' \
+    --preview-window 'up,60%,border-line,+{2}+3/3,~3' \
+    --bind 'enter:become(vim {1} +{2})'
+```
+
+<Tip>
+For more ripgrep integration examples, check out the [fzf-git.sh](https://github.com/junegunn/fzf-git.sh) project which provides similar patterns for Git objects.
+</Tip>

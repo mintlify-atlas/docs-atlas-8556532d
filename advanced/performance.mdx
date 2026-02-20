@@ -1,0 +1,308 @@
+---
+title: Performance Optimization
+description: Performance considerations and optimization techniques for fzf
+---
+
+fzf is fast and performance should not be a problem in most use cases. However, there are several options and techniques that can affect performance, especially when dealing with very large datasets.
+
+## Performance-Affecting Options
+
+### --ansi
+
+The `--ansi` option tells fzf to parse ANSI color codes in the input.
+
+```bash
+rg --color=always 'pattern' | fzf --ansi
+```
+
+**Performance impact:**
+- Slower initial scanning because fzf must extract and parse color codes
+- Each line requires additional processing
+- Memory overhead for storing color information
+
+<Warning>
+**Do not add `--ansi` to `$FZF_DEFAULT_OPTS`**
+
+Only use `--ansi` when you know the input contains ANSI codes:
+
+```bash
+# Good - only when needed
+rg --color=always 'pattern' | fzf --ansi
+
+# Bad - affects all fzf usage
+export FZF_DEFAULT_OPTS='--ansi'
+```
+</Warning>
+
+### --nth
+
+The `--nth` option restricts search to specific fields.
+
+```bash
+# Only search in 3rd and 4th fields
+ps aux | fzf --nth=3,4
+```
+
+**Performance impact:**
+- Requires tokenizing each line into fields
+- Additional processing for every line
+- More CPU time during filtering
+
+**When to use:**
+- When you want to exclude certain fields from search (like line numbers)
+- Trade-off between accuracy and performance
+
+```bash
+# Good use case: exclude line numbers from search
+git grep --line-number 'pattern' | fzf --delimiter=: --nth=3..
+```
+
+### --delimiter
+
+Specifies the delimiter for field splitting (used with `--nth` and `--with-nth`).
+
+```bash
+# Using delimiter
+ps aux | fzf --delimiter=' ' --nth=1,2
+```
+
+**Performance tip:**
+
+<Warning>
+**Prefer plain string delimiters over regular expressions**
+
+```bash
+# Fast - plain string
+fzf --delimiter=':'
+
+# Slower - regex delimiter  
+fzf --delimiter='[:]'
+```
+
+Regular expression delimiters require more CPU time for pattern matching on every line.
+</Warning>
+
+### --with-nth
+
+Transforms the display by showing only specified fields.
+
+```bash
+# Show only columns 2, 3, and 5
+ps aux | fzf --with-nth=2,3,5
+```
+
+**Performance impact:**
+- Requires tokenizing each line
+- Must reassemble the display from selected fields
+- Extra memory for storing both original and transformed versions
+- Slower than not using field transformation
+
+**When it's worth it:**
+- Simplifying complex output for better usability
+- Hiding irrelevant columns
+
+Example:
+```bash
+# Hide verbose git log information
+git log --oneline --decorate | fzf --with-nth=1,2
+```
+
+## General Optimization Strategies
+
+### Limit Input Size
+
+The simplest way to improve performance is to reduce the amount of data:
+
+```bash
+# Instead of processing everything
+find / | fzf
+
+# Limit the scope
+find ~/projects -name '*.js' | fzf
+```
+
+### Use Fast Data Sources
+
+Some commands are faster than others:
+
+```bash
+# Slow
+find . | fzf
+
+# Faster
+fd | fzf
+
+# Even faster - use fzf's built-in file finder
+fzf
+```
+
+### Preview Window Optimization
+
+Preview commands run for every selection change:
+
+```bash
+# Slow preview - runs expensive command on every move
+fzf --preview 'expensive-command {}'
+
+# Better - use efficient preview commands
+fzf --preview 'bat --color=always {}'
+
+# Cache previews when possible
+fzf --preview 'bat --color=always --cached {}'
+```
+
+<Warning>
+**Avoid expensive preview commands**
+
+Preview commands run on every cursor move:
+
+```bash
+# Bad - this will be very slow
+fzf --preview 'docker inspect {} | jq .'
+
+# Better - use faster alternatives or limit output
+fzf --preview 'docker inspect {} | jq -C . | head -50'
+```
+</Warning>
+
+### Reload Action Debouncing
+
+When using `reload` with the `change` event, add debouncing:
+
+```bash
+# Without debouncing - creates many processes
+fzf --bind 'change:reload(rg {q})'
+
+# With debouncing - waits 0.1s before reloading
+fzf --bind 'change:reload:sleep 0.1; rg {q}'
+```
+
+The `sleep` adds a small delay, reducing the number of processes spawned while typing.
+
+## Memory Considerations
+
+### Large Result Sets
+
+fzf loads all input into memory:
+
+```bash
+# This loads millions of lines into memory
+find / | fzf
+```
+
+**Solutions:**
+
+1. **Limit the input scope:**
+   ```bash
+   find ~/projects | fzf
+   ```
+
+2. **Use dynamic reloading:**
+   ```bash
+   fzf --bind 'change:reload(find ~/projects -name "*{q}*")' --disabled
+   ```
+   Only matching results are kept in memory.
+
+3. **Stream processing:**
+   For huge datasets, use tools that do the filtering:
+   ```bash
+   rg --color=always 'pattern' | fzf --ansi
+   ```
+   Ripgrep filters first, reducing fzf's memory usage.
+
+### Preview Memory Usage
+
+Long-running preview commands can consume memory:
+
+```bash
+# Logs can grow very large
+fzf --preview 'kubectl logs {}'
+
+# Limit the preview size
+fzf --preview 'kubectl logs --tail=100 {}'
+```
+
+## Scheme Selection
+
+fzf provides schemes optimized for different input types:
+
+```bash
+# Default scheme - general purpose
+fzf --scheme=default
+
+# Optimized for file paths
+fzf --scheme=path
+
+# Optimized for command history
+fzf --scheme=history
+```
+
+Using the appropriate scheme can improve both relevance and performance.
+
+## Benchmarking
+
+Test performance with your actual data:
+
+```bash
+# Time the operation
+time find . | fzf --filter 'pattern' > /dev/null
+
+# Compare with different options
+time find . | fzf --filter 'pattern' --nth=1 > /dev/null
+```
+
+## Real-World Example: Optimized Ripgrep Integration
+
+Here's a performance-optimized ripgrep integration:
+
+```bash
+#!/usr/bin/env bash
+
+RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+INITIAL_QUERY="${*:-}"
+
+fzf --ansi --disabled --query "$INITIAL_QUERY" \
+    --bind "start:reload:$RG_PREFIX {q}" \
+    --bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+    --delimiter : \
+    --preview 'bat --color=always {1} --line-range {2}:+50' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
+    --bind 'enter:become(vim {1} +{2})'
+```
+
+Optimizations:
+- `--disabled` - fzf doesn't filter, ripgrep does all searching
+- `sleep 0.1` - debouncing reduces ripgrep processes
+- `--line-range {2}:+50` - bat only renders 50 lines around the match
+- `|| true` - suppress error messages, avoid process overhead
+
+## Performance Best Practices Summary
+
+1. **Avoid adding performance-affecting options to `$FZF_DEFAULT_OPTS`**
+   - Only use `--ansi`, `--nth`, `--with-nth` when needed
+
+2. **Prefer plain string delimiters over regex**
+   - `--delimiter=':'` is faster than `--delimiter='[:]'`
+
+3. **Limit input data**
+   - Filter before piping to fzf when possible
+   - Use specific paths instead of searching everything
+
+4. **Use efficient preview commands**
+   - Avoid expensive operations in preview
+   - Limit output size (`head`, `tail`, `--line-range`)
+
+5. **Debounce reload actions**
+   - Add `sleep 0.1` when binding to `change` event
+
+6. **Choose appropriate schemes**
+   - Use `--scheme=path` for file paths
+   - Use `--scheme=history` for command history
+
+7. **Use dynamic reloading for huge datasets**
+   - Delegate filtering to faster tools (ripgrep, fd)
+   - Use `--disabled` with `reload` action
+
+8. **Profile and measure**
+   - Test with your actual data
+   - Compare different approaches with `time`

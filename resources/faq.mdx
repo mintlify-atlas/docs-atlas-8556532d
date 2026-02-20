@@ -1,0 +1,409 @@
+---
+title: Frequently Asked Questions
+description: Common questions about fzf
+---
+
+# Frequently Asked Questions
+
+Find answers to common questions about using fzf.
+
+## General Questions
+
+<AccordionGroup>
+  <Accordion title="What is fzf?">
+    fzf is a general-purpose command-line fuzzy finder. It's an interactive filter program for any kind of list: files, command history, processes, hostnames, bookmarks, git commits, and more. It implements a "fuzzy" matching algorithm, allowing you to quickly type patterns with omitted characters and still get the results you want.
+
+    Key highlights:
+    - **Portable** - Distributed as a single binary for easy installation
+    - **Fast** - Optimized to process millions of items instantly
+    - **Versatile** - Fully customizable through an event-action binding mechanism
+    - **All-inclusive** - Comes with integrations for Bash, Zsh, Fish, Vim, and Neovim
+  </Accordion>
+
+  <Accordion title="What are the minimum requirements for running fzf?">
+    fzf is built with Go and distributed as a single binary with no runtime dependencies.
+
+    - **Operating Systems**: Linux, macOS, Windows, BSD systems
+    - **Terminal**: Any terminal emulator that supports basic ANSI escape sequences
+    - **Shell** (for integration): Bash, Zsh, Fish, or any POSIX-compliant shell
+    - **Go version** (for building from source): Go 1.23+ (as of fzf 0.66.0)
+
+    Note: Starting with version 0.66.0, support for some older OS versions has been dropped. See the [Go minimum requirements](https://go.dev/wiki/MinimumRequirements) for details.
+  </Accordion>
+
+  <Accordion title="How is fzf different from other fuzzy finders?">
+    fzf stands out for several reasons:
+
+    - **Speed**: Highly optimized to handle millions of items instantly
+    - **Portability**: Single binary with no dependencies
+    - **Flexibility**: Works with any type of input, not just files
+    - **Customization**: Extensive options for appearance and behavior
+    - **Shell integration**: Out-of-the-box key bindings for Bash, Zsh, and Fish
+    - **Preview window**: Built-in support for previewing items
+    - **Advanced features**: Multi-selection, custom key bindings, event-action system, API server mode
+  </Accordion>
+</AccordionGroup>
+
+## Installation & Setup
+
+<AccordionGroup>
+  <Accordion title="How do I install fzf?">
+    There are several installation methods:
+
+    **Using Homebrew (macOS/Linux):**
+    ```bash
+    brew install fzf
+    ```
+
+    **Using package managers:**
+    - Arch Linux: `sudo pacman -S fzf`
+    - Ubuntu/Debian: `sudo apt install fzf`
+    - Fedora: `sudo dnf install fzf`
+
+    **Using git:**
+    ```bash
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+    ~/.fzf/install
+    ```
+
+    **Binary releases:**
+    Download from https://github.com/junegunn/fzf/releases
+
+    After installation, set up shell integration as described in the documentation.
+  </Accordion>
+
+  <Accordion title="How do I set up shell integration?">
+    Shell integration provides key bindings (CTRL-T, CTRL-R, ALT-C) and fuzzy completion.
+
+    **Bash** - Add to `~/.bashrc`:
+    ```bash
+    eval "$(fzf --bash)"
+    ```
+
+    **Zsh** - Add to `~/.zshrc`:
+    ```zsh
+    source <(fzf --zsh)
+    ```
+
+    **Fish** - Add to `~/.config/fish/config.fish`:
+    ```fish
+    fzf --fish | source
+    ```
+
+    These commands require fzf 0.48.0 or later. For older versions, source individual files from the `/shell` directory.
+  </Accordion>
+
+  <Accordion title="How do I upgrade fzf?">
+    The upgrade method depends on your installation method:
+
+    - **git**: `cd ~/.fzf && git pull && ./install`
+    - **Homebrew**: `brew update && brew upgrade fzf`
+    - **MacPorts**: `sudo port upgrade fzf`
+    - **Chocolatey**: `choco upgrade fzf`
+    - **vim-plug**: `:PlugUpdate fzf`
+    - **Package managers**: Use your distribution's package update command
+  </Accordion>
+</AccordionGroup>
+
+## Usage & Features
+
+<AccordionGroup>
+  <Accordion title="How do I use fzf with pipes?">
+    fzf reads from STDIN and writes the selected item to STDOUT:
+
+    ```bash
+    # Find and edit a file
+    vim $(find * -type f | fzf)
+
+    # Kill a process
+    ps -ef | fzf | awk '{print $2}' | xargs kill
+
+    # Search command history
+    history | fzf
+    ```
+
+    Without STDIN input, fzf traverses the file system under the current directory using its built-in walker.
+  </Accordion>
+
+  <Accordion title="What are the default key bindings?">
+    **Navigation:**
+    - `CTRL-K` / `CTRL-J` (or `CTRL-P` / `CTRL-N`): Move cursor up/down
+    - `Enter`: Select item
+    - `CTRL-C` / `CTRL-G` / `ESC`: Exit
+
+    **Multi-select mode (`-m`):**
+    - `TAB`: Mark/unmark item
+    - `Shift-TAB`: Unmark/mark item
+
+    **Shell integration:**
+    - `CTRL-T`: Paste selected files and directories
+    - `CTRL-R`: Paste selected command from history
+    - `ALT-C`: cd into selected directory
+
+    **Fuzzy completion:**
+    - `**<TAB>`: Trigger fuzzy completion (bash/zsh)
+    - `Shift-TAB`: Trigger fuzzy completion (fish)
+
+    Mouse operations are also supported: scroll, click, double-click, shift-click.
+  </Accordion>
+
+  <Accordion title="How do I respect .gitignore files?">
+    fzf's built-in walker doesn't respect `.gitignore` by default. Use `fd` or `ripgrep` instead:
+
+    **Using fd (recommended):**
+    ```bash
+    # Basic setup
+    export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+    # Include hidden files, follow symlinks, exclude .git
+    export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+    ```
+
+    **Using ripgrep:**
+    ```bash
+    export FZF_DEFAULT_COMMAND='rg --files --hidden --follow --glob "!.git/*"'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+    ```
+
+    Both tools automatically respect `.gitignore` files.
+  </Accordion>
+
+  <Accordion title="How do I customize the appearance of fzf?">
+    Use `--color` to customize colors and `--style` for quick presets:
+
+    **Style presets:**
+    ```bash
+    fzf --style full      # Full borders and labels
+    fzf --style minimal   # Minimal interface
+    fzf --style default   # Default appearance
+    ```
+
+    **Custom colors:**
+    ```bash
+    fzf --color 'fg:#bbccdd,bg:#334455,hl:#719872'
+    ```
+
+    **Border customization:**
+    ```bash
+    fzf --border rounded --border-label ' Search '
+    ```
+
+    See the man page (`fzf --man`) for all available color options.
+  </Accordion>
+
+  <Accordion title="How do I use the preview window?">
+    Add `--preview` with a command that takes the current item:
+
+    ```bash
+    # Preview file contents
+    fzf --preview 'cat {}'
+
+    # With syntax highlighting (requires bat)
+    fzf --preview 'bat --color=always {}'
+
+    # Customize preview window position and size
+    fzf --preview 'cat {}' --preview-window=right:50%:border-left
+
+    # Toggle preview with CTRL-/
+    fzf --preview 'cat {}' --bind 'ctrl-/:toggle-preview'
+    ```
+
+    Warning: Never add `--preview` to `$FZF_DEFAULT_OPTS` as fzf is a general-purpose filter, not just for files.
+  </Accordion>
+
+  <Accordion title="How do I handle multi-line items?">
+    fzf supports multi-line items using null characters as delimiters:
+
+    ```bash
+    # Display all bash functions with syntax highlighting
+    declare -f | perl -0777 -pe 's/^}\n/}\0/gm' |
+      bat --plain --language bash --color always |
+      fzf --read0 --ansi --reverse --multi --highlight-line
+
+    # Ripgrep with multi-line context
+    rg --pretty bash | perl -0777 -pe 's/\n\n/\n\0/gm' |
+      fzf --read0 --ansi --multi --highlight-line
+    ```
+
+    The default CTRL-R binding in shells now uses multi-line display for better command history visualization.
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Features
+
+<AccordionGroup>
+  <Accordion title="What is the 'raw' mode in fzf?">
+    Raw mode (added in v0.66.0) shows non-matching items in their original positions but dimmed, allowing you to see context around matches.
+
+    ```bash
+    # Enable raw mode and toggle with ALT-R
+    tree | fzf --raw --bind alt-r:toggle-raw
+
+    # Navigate only through matches with CTRL-N/CTRL-P
+    fzf --raw --bind 'ctrl-n:down-match,ctrl-p:up-match'
+    ```
+
+    You can customize the appearance with `--color nomatch:...` and `--gutter-raw`.
+  </Accordion>
+
+  <Accordion title="Can I use fzf with tmux?">
+    Yes! fzf has native tmux integration (v0.53.0+):
+
+    ```bash
+    # Center popup, 70% height
+    fzf --tmux 100%,70% --border horizontal
+
+    # Left side, 30% width
+    fzf --tmux left,30%
+
+    # Bottom, 50% height
+    fzf --tmux bottom,50%
+    ```
+
+    Requires tmux 3.3 or later. For Vim integration:
+    ```vim
+    let g:fzf_layout = { 'tmux': '100%,70%' }
+    ```
+  </Accordion>
+
+  <Accordion title="How do I create custom key bindings?">
+    Use `--bind` to create custom key bindings:
+
+    ```bash
+    # Execute a command on selected item
+    fzf --bind 'ctrl-e:execute(vim {})'
+
+    # Multiple actions
+    fzf --bind 'ctrl-y:execute-silent(echo {} | pbcopy)+abort'
+
+    # Reload results dynamically
+    fzf --bind 'ctrl-r:reload(find . -type f)'
+
+    # Transform actions based on conditions
+    fzf --bind 'enter:transform:[[ -d {} ]] && echo "execute(cd {})" || echo "accept"'
+    ```
+
+    See the man page for all available actions.
+  </Accordion>
+
+  <Accordion title="Can I use fzf as an API server?">
+    Yes, fzf can run as an HTTP server:
+
+    ```bash
+    # Start server on port 6266
+    fzf --listen 6266
+
+    # Or use Unix domain socket
+    fzf --listen /tmp/fzf.sock
+
+    # Send commands via curl
+    curl -XPOST localhost:6266 -d 'reload(seq 100)'
+    curl --unix-socket /tmp/fzf.sock http://localhost -d 'change-query(test)'
+    ```
+
+    This allows external programs to control fzf dynamically.
+  </Accordion>
+
+  <Accordion title="How do I handle large data streams?">
+    For endless streams or very large datasets, use `--tail` to limit memory:
+
+    ```bash
+    # Interactive log filtering (keep last 100k entries)
+    tail -f *.log | fzf --tail 100000 --tac --no-sort --exact
+
+    # Process stream with preview
+    tail -f app.log | fzf --tail 50000 --preview 'echo {} | jq .'
+    ```
+
+    This keeps memory usage constant regardless of input size.
+  </Accordion>
+</AccordionGroup>
+
+## Vim/Neovim Integration
+
+<AccordionGroup>
+  <Accordion title="How do I use fzf in Vim?">
+    Install the fzf plugin using vim-plug:
+
+    ```vim
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'junegunn/fzf.vim'
+    ```
+
+    The first plugin provides library functions, while `fzf.vim` provides useful commands like `:Files`, `:Buffers`, `:Rg`, etc.
+
+    See [README-VIM.md](https://github.com/junegunn/fzf/blob/master/README-VIM.md) for detailed documentation.
+  </Accordion>
+
+  <Accordion title="What if I prefer Lua-based plugins for Neovim?">
+    Check out [fzf-lua](https://github.com/ibhagwan/fzf-lua), a Lua-based alternative for Neovim that provides similar functionality with a more native Neovim experience.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Why isn't my shell integration working?">
+    Common issues:
+
+    1. **Not sourced correctly**: Ensure you've added the integration command to the correct config file and restarted your shell
+    2. **Old fzf version**: `--bash`, `--zsh`, `--fish` options require fzf 0.48.0+
+    3. **Path issues**: Verify fzf is in your PATH with `which fzf`
+    4. **Order matters**: When disabling bindings, set `*_COMMAND` variables *before* sourcing
+
+    See the [Troubleshooting](/resources/troubleshooting) page for detailed solutions.
+  </Accordion>
+
+  <Accordion title="Why is FZF_DEFAULT_COMMAND not being used?">
+    `FZF_DEFAULT_COMMAND` is only used when fzf receives input from a TTY device. It's **not** used by:
+
+    - CTRL-T binding (use `FZF_CTRL_T_COMMAND` instead)
+    - ALT-C binding (use `FZF_ALT_C_COMMAND` instead)
+    - Fuzzy completion (override `_fzf_compgen_path()` and `_fzf_compgen_dir()` functions)
+
+    This is by design due to different requirements for each feature.
+  </Accordion>
+
+  <Accordion title="How do I report bugs or request features?">
+    - **Bug reports**: https://github.com/junegunn/fzf/issues
+    - **Security issues**: Email junegunn.c@gmail.com (see [SECURITY.md](https://github.com/junegunn/fzf/blob/master/SECURITY.md))
+    - **Feature requests**: Open a discussion or issue on GitHub
+    - **Questions**: Check existing issues or open a new discussion
+
+    When reporting bugs, include:
+    - fzf version (`fzf --version`)
+    - Operating system and shell
+    - Minimal reproducible example
+    - Expected vs actual behavior
+  </Accordion>
+</AccordionGroup>
+
+## Community & Resources
+
+<AccordionGroup>
+  <Accordion title="Where can I find more examples?">
+    - [Wiki examples page](https://github.com/junegunn/fzf/wiki/examples) - Community-maintained examples
+    - [ADVANCED.md](https://github.com/junegunn/fzf/blob/master/ADVANCED.md) - Advanced usage patterns
+    - [Release highlights](https://junegunn.github.io/fzf/) - Feature showcases
+    - [Tips section](/resources/troubleshooting) - Practical use cases and workflows
+  </Accordion>
+
+  <Accordion title="Are there related projects I should know about?">
+    Check out the [Related Projects](https://github.com/junegunn/fzf/wiki/Related-projects) wiki page for:
+
+    - Shell plugins and enhancements
+    - Editor integrations
+    - Alternative implementations
+    - Tools built on top of fzf
+    - Fzf-compatible tools
+  </Accordion>
+
+  <Accordion title="How can I support the project?">
+    - Star the repository on [GitHub](https://github.com/junegunn/fzf)
+    - Sponsor the project: https://github.com/sponsors/junegunn
+    - Contribute code, documentation, or bug reports
+    - Share your fzf workflows and configurations
+    - Buy fzf merchandise: https://commitgoods.com/collections/fzf
+  </Accordion>
+</AccordionGroup>

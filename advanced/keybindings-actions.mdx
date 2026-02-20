@@ -1,0 +1,134 @@
+---
+title: Custom Key Bindings and Actions
+description: Configure custom key bindings and execute external programs within fzf
+---
+
+fzf provides a powerful event-action binding mechanism that allows you to customize key bindings and execute external programs without leaving the fzf interface.
+
+## Key Binding Syntax
+
+Use the `--bind` option to define custom key bindings:
+
+```bash
+fzf --bind 'KEY:ACTION'
+```
+
+You can chain multiple actions with `+`:
+
+```bash
+fzf --bind 'KEY:ACTION1+ACTION2+ACTION3'
+```
+
+## Execute Actions
+
+The `execute` and `execute-silent` actions allow you to run external commands without leaving fzf.
+
+### execute
+
+Runs a command and displays its output:
+
+```bash
+# Press F1 to open the file with less without leaving fzf
+fzf --bind 'f1:execute(less -f {})'
+```
+
+### execute-silent
+
+Runs a command without displaying output:
+
+```bash
+# Press CTRL-Y to copy the line to clipboard and abort fzf
+fzf --bind 'ctrl-y:execute-silent(echo {} | pbcopy)+abort'
+```
+
+### Combined Example
+
+```bash
+# Multiple execute bindings
+fzf --bind 'f1:execute(less -f {}),ctrl-y:execute-silent(echo {} | pbcopy)+abort'
+```
+
+## Kubernetes Pod Browser Example
+
+Here's a practical example for browsing Kubernetes pods with multiple execute bindings:
+
+```bash
+pods() {
+  command='kubectl get pods --all-namespaces' fzf \
+    --info=inline --layout=reverse --header-lines=1 \
+    --prompt "$(kubectl config current-context | sed 's/-context$//')> " \
+    --header $'╱ Enter (kubectl exec) ╱ CTRL-O (open log in editor) ╱ CTRL-R (reload) ╱\n\n' \
+    --bind 'start,ctrl-r:reload:$command' \
+    --bind 'ctrl-/:change-preview-window(80%,border-bottom|hidden|)' \
+    --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash' \
+    --bind 'ctrl-o:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2})' \
+    --preview-window up:follow \
+    --preview 'kubectl logs --follow --all-containers --tail=10000 --namespace {1} {2}' "$@"
+}
+```
+
+This example demonstrates:
+- **enter**: Execute into the selected pod with `kubectl exec`
+- **ctrl-o**: Open pod logs in your editor
+- **ctrl-r**: Reload the pod list
+- **ctrl-/**: Toggle preview window visibility
+
+## Common Action Types
+
+### Navigation Actions
+- `up`, `down` - Move cursor
+- `page-up`, `page-down` - Page through results
+- `first`, `last` - Jump to first/last item
+
+### Selection Actions
+- `accept` - Accept current selection (Enter)
+- `abort` - Exit fzf (Ctrl-C)
+- `toggle` - Toggle selection (Tab)
+- `toggle-all` - Toggle all items
+
+### Execution Actions
+- `execute(...)` - Run command and show output
+- `execute-silent(...)` - Run command without output
+- `become(...)` - Replace fzf with another process
+
+### UI Actions
+- `change-preview(...)` - Update preview command
+- `change-prompt(...)` - Update prompt text
+- `toggle-preview` - Show/hide preview window
+- `clear-query` - Clear search query
+
+## Field Index Expressions
+
+Use field index expressions in your commands:
+
+```bash
+# Open file at specific line
+git grep --line-number . | \
+  fzf --delimiter : \
+      --bind 'enter:execute(vim {1} +{2})'
+```
+
+- `{1}` - First field (filename)
+- `{2}` - Second field (line number)
+- `{+}` - All selected items
+- `{q}` - Current query string
+
+## Event Bindings
+
+Bind actions to events instead of keys:
+
+```bash
+# Bind to the 'change' event
+fzf --bind 'change:reload(find . -name "*{q}*")'
+
+# Bind to the 'start' event
+fzf --bind 'start:reload(ps -ef)'
+```
+
+Available events:
+- `start` - Triggered once when fzf starts
+- `change` - Triggered when query changes
+- `focus` - Triggered when focus changes
+- `result` - Triggered when results update
+
+See the [man page](http://man.junegunn.dev/fzf) for the complete list of actions and key bindings.

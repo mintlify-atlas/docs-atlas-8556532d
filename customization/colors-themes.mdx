@@ -1,0 +1,334 @@
+---
+title: Colors and Themes
+description: Customize fzf's appearance with colors, styles, and themes
+---
+
+fzf provides extensive customization options for its appearance, including color schemes, UI styles, borders, and more.
+
+## Style Presets
+
+fzf offers three built-in style presets that configure the overall look and feel. Use the `--style` option to quickly apply a preset:
+
+```bash
+fzf --style PRESET
+```
+
+### Available Presets
+
+<CardGroup cols={3}>
+  <Card title="default" icon="square">
+    Standard appearance with balanced information density
+  </Card>
+  <Card title="full" icon="grid-2" >
+    Maximum information with all UI elements visible
+  </Card>
+  <Card title="minimal" icon="minus">
+    Clean, minimal interface with reduced UI elements
+  </Card>
+</CardGroup>
+
+| Preset | Description | Screenshot |
+| :--- | :--- | :--- |
+| `default` | Standard balanced style | <img src="https://raw.githubusercontent.com/junegunn/i/master/fzf-style-default.png" alt="default style"/> |
+| `full` | All UI elements enabled | <img src="https://raw.githubusercontent.com/junegunn/i/master/fzf-style-full.png" alt="full style"/> |
+| `minimal` | Minimal, clean interface | <img src="https://raw.githubusercontent.com/junegunn/i/master/fzf-style-minimal.png" alt="minimal style"/> |
+
+### Using Style Presets
+
+```bash
+# Use the full preset with a preview window
+fzf --style full \
+    --preview 'fzf-preview.sh {}' \
+    --bind 'focus:transform-header:file --brief {}'
+
+# Combine minimal style with custom options
+fzf --style minimal --border --preview 'bat --color=always {}'
+```
+
+## Color Customization
+
+fzf's color scheme can be fully customized using the `--color` option. Colors can be specified for individual UI elements.
+
+### Color Syntax
+
+```bash
+--color=[ELEMENT]:[COLOR]
+```
+
+**Color formats:**
+- Named colors: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`
+- ANSI color codes: `0` through `255`
+- Hex colors: `#RRGGBB` (e.g., `#ff0000`)
+- Special value: `-1` (use terminal's default color)
+
+### Color Elements
+
+fzf supports extensive color customization for different UI components:
+
+#### Basic Elements
+
+| Element | Description |
+| :--- | :--- |
+| `fg` | Foreground color for normal items |
+| `bg` | Background color for normal items |
+| `hl` | Highlighted substrings in normal items |
+| `fg+` | Foreground color for current item |
+| `bg+` | Background color for current item |
+| `hl+` | Highlighted substrings in current item |
+| `gutter` | Background color of gutter on the left |
+
+#### UI Components
+
+| Element | Description |
+| :--- | :--- |
+| `info` | Info area (match count, etc.) |
+| `prompt` | Prompt text |
+| `pointer` | Pointer to current item |
+| `marker` | Multi-select marker |
+| `spinner` | Streaming input indicator |
+| `header` | Header text |
+| `separator` | Separator between main window and preview |
+| `scrollbar` | Scrollbar |
+
+#### Border Elements
+
+| Element | Description |
+| :--- | :--- |
+| `border` | Border color |
+| `label` | Border label |
+| `preview-border` | Preview window border |
+| `preview-label` | Preview window label |
+| `preview-scrollbar` | Preview window scrollbar |
+| `list-border` | Result list border (with `--style full`) |
+| `list-label` | Result list label |
+| `input-border` | Input area border (with `--style full`) |
+| `input-label` | Input area label |
+| `header-border` | Header area border (with `--style full`) |
+| `header-label` | Header area label |
+
+#### Preview Elements
+
+| Element | Description |
+| :--- | :--- |
+| `preview-fg` | Preview window foreground |
+| `preview-bg` | Preview window background |
+
+### Example Color Schemes
+
+#### Dark Theme (Dracula)
+
+```bash
+fzf --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 \
+    --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9 \
+    --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6 \
+    --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4
+```
+
+#### Light Theme
+
+```bash
+fzf --color=fg:#4d4d4c,bg:#ffffff,hl:#3e999f \
+    --color=fg+:#4d4d4c,bg+:#e8e8e8,hl+:#3e999f \
+    --color=info:#4271ae,prompt:#718c00,pointer:#c82829 \
+    --color=marker:#c82829,spinner:#4271ae,header:#8959a8
+```
+
+#### Monokai
+
+```bash
+fzf --color=fg:#d0d0d0,bg:#1b1d1e,hl:#5f87af \
+    --color=fg+:#d0d0d0,bg+:#262626,hl+:#5fd7ff \
+    --color=info:#afaf87,prompt:#d7005f,pointer:#af5fff \
+    --color=marker:#87ff00,spinner:#af5fff,header:#87afaf
+```
+
+#### Nord Theme
+
+```bash
+fzf --color=fg:#e5e9f0,bg:#2e3440,hl:#81a1c1 \
+    --color=fg+:#e5e9f0,bg+:#3b4252,hl+:#81a1c1 \
+    --color=info:#eacb8a,prompt:#bf6069,pointer:#b48dac \
+    --color=marker:#a3be8b,spinner:#b48dac,header:#a3be8b
+```
+
+#### Simple Dark (Terminal Colors)
+
+```bash
+fzf --color=dark \
+    --color=fg:-1,bg:-1,hl:#5fff87,fg+:-1,bg+:-1,hl+:#ffaf5f \
+    --color=info:#af87ff,prompt:#5fff87,pointer:#ff87d7 \
+    --color=marker:#ff87d7,spinner:#ff87d7
+```
+
+### Advanced Color Configuration
+
+With `--style full`, you can customize colors for different bordered sections:
+
+```bash
+git ls-files | fzf --style full \
+    --border --padding 1,2 \
+    --border-label ' Demo ' \
+    --input-label ' Input ' \
+    --header-label ' File Type ' \
+    --preview 'fzf-preview.sh {}' \
+    --bind 'focus:transform-preview-label:[[ -n {} ]] && printf " Previewing [%s] " {}' \
+    --color 'border:#aaaaaa,label:#cccccc' \
+    --color 'preview-border:#9999cc,preview-label:#ccccff' \
+    --color 'list-border:#669966,list-label:#99cc99' \
+    --color 'input-border:#996666,input-label:#ffcccc' \
+    --color 'header-border:#6699cc,header-label:#99ccff'
+```
+
+<img src="https://raw.githubusercontent.com/junegunn/i/master/fzf-4-borders.png" alt="fzf with 4 borders"/>
+
+### Preview Window Colors
+
+Customize the preview window appearance:
+
+```bash
+fzf --height 40% --layout reverse --info inline --border \
+    --preview 'file {}' \
+    --preview-window up,1,border-horizontal \
+    --color 'fg:#bbccdd,fg+:#ddeeff,bg:#334455,preview-bg:#223344,border:#778899'
+```
+
+## Border Styles
+
+fzf supports various border styles:
+
+```bash
+# Full border
+fzf --border
+
+# Specific border types
+fzf --border=rounded      # Rounded corners
+fzf --border=sharp        # Sharp corners
+fzf --border=bold         # Bold lines
+fzf --border=double       # Double lines
+fzf --border=horizontal   # Top and bottom only
+fzf --border=vertical     # Left and right only
+fzf --border=top          # Top only
+fzf --border=bottom       # Bottom only
+fzf --border=left         # Left only
+fzf --border=right        # Right only
+```
+
+### Border with Labels
+
+```bash
+# Add labels to borders
+fzf --border=rounded \
+    --border-label=' Search ' \
+    --border-label-pos=3
+
+# Preview window border with label
+fzf --preview 'bat --color=always {}' \
+    --preview-window border-rounded \
+    --bind 'focus:transform-preview-label:echo " Preview: {} "'
+```
+
+## Layout Options
+
+```bash
+# Layout direction
+fzf --layout=default      # Bottom to top
+fzf --layout=reverse      # Top to bottom (recommended)
+fzf --layout=reverse-list # Reverse list only, keep prompt at bottom
+
+# Info display
+fzf --info=default        # Right side
+fzf --info=inline         # Same line as input
+fzf --info=inline:' > '   # Inline with custom separator
+fzf --info=hidden         # Hide info
+
+# Pointer and marker
+fzf --pointer='→'         # Custom pointer character
+fzf --marker='✓'          # Custom marker for selected items
+fzf --prompt='Search: '   # Custom prompt
+```
+
+## Padding and Margin
+
+```bash
+# Add padding inside the border
+fzf --border --padding 1       # 1 row/column on all sides
+fzf --border --padding 1,2     # 1 row (top/bottom), 2 columns (left/right)
+fzf --border --padding 1,2,3,4 # Top, right, bottom, left
+
+# Add margin outside the border
+fzf --margin 1         # 1 row/column on all sides
+fzf --margin 1,2       # 1 row, 2 columns
+fzf --margin 1,2,3,4   # Top, right, bottom, left
+```
+
+## fzf Theme Playground
+
+The [fzf Theme Playground](https://vitormv.github.io/fzf-themes/) is an interactive web tool where you can:
+
+- Visually design your fzf color scheme
+- Preview changes in real-time
+- Export the `--color` configuration
+- Browse community-contributed themes
+
+Created by [Vitor Mello](https://github.com/vitormv), it's the easiest way to create and test custom themes.
+
+## Complete Example
+
+Here's a fully customized fzf configuration:
+
+```bash
+fzf --style full \
+    --height 60% \
+    --layout reverse \
+    --border rounded \
+    --border-label ' 📁 File Browser ' \
+    --border-label-pos 3 \
+    --padding 1 \
+    --margin 1 \
+    --prompt '🔍 ' \
+    --pointer '→' \
+    --marker '✓' \
+    --info inline \
+    --preview 'bat --color=always --style=numbers {}' \
+    --preview-window 'right,60%,border-rounded' \
+    --color 'fg:#d0d0d0,bg:#1b1d1e,hl:#5f87af' \
+    --color 'fg+:#d0d0d0,bg+:#262626,hl+:#5fd7ff' \
+    --color 'info:#afaf87,prompt:#d7005f,pointer:#af5fff' \
+    --color 'marker:#87ff00,spinner:#af5fff,header:#87afaf' \
+    --color 'border:#5f87af,label:#afaf87' \
+    --color 'preview-border:#87afaf,preview-label:#5fd7ff'
+```
+
+## Saving Your Theme
+
+Add your preferred color scheme to your shell configuration:
+
+```bash title="~/.bashrc or ~/.zshrc"
+export FZF_DEFAULT_OPTS="
+  --layout=reverse
+  --border=rounded
+  --info=inline
+  --prompt='🔍 '
+  --pointer='→'
+  --marker='✓'
+  --color=dark
+  --color=fg:#d0d0d0,bg:-1,hl:#5f87af
+  --color=fg+:#d0d0d0,bg+:-1,hl+:#5fd7ff
+  --color=info:#afaf87,prompt:#d7005f,pointer:#af5fff
+  --color=marker:#87ff00,spinner:#af5fff,header:#87afaf"
+```
+
+Or use a configuration file:
+
+```bash
+export FZF_DEFAULT_OPTS_FILE=~/.fzfrc
+```
+
+```txt title="~/.fzfrc"
+--layout=reverse
+--border=rounded
+--info=inline
+--color=fg:#d0d0d0,bg:#1b1d1e,hl:#5f87af
+--color=fg+:#d0d0d0,bg+:#262626,hl+:#5fd7ff
+--color=info:#afaf87,prompt:#d7005f,pointer:#af5fff
+```

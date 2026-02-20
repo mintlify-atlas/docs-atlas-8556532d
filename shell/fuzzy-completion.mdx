@@ -1,0 +1,313 @@
+---
+title: Fuzzy Completion
+description: Fuzzy completion for files, directories, processes, hostnames, and more
+---
+
+fzf provides fuzzy completion for bash, zsh, and fish shells. Instead of traditional tab completion, you get an interactive fuzzy finder interface.
+
+## Trigger Sequence
+
+Fuzzy completion is triggered by the `**` sequence followed by `TAB`:
+
+```bash
+COMMAND [DIRECTORY/][FUZZY_PATTERN]**<TAB>
+```
+
+You can customize the trigger sequence:
+
+```bash
+export FZF_COMPLETION_TRIGGER='~~'
+```
+
+## Files and Directories
+
+### File Completion
+
+Trigger fuzzy file completion with `**<TAB>`:
+
+```bash
+# Files under current directory (multi-select with TAB)
+vim **<TAB>
+
+# Files under parent directory
+vim ../**<TAB>
+
+# Files matching 'fzf' under parent directory
+vim ../fzf**<TAB>
+
+# Files under home directory
+vim ~/**<TAB>
+```
+
+### Directory Completion
+
+Directory completion is single-selection:
+
+```bash
+# Directories under current directory
+cd **<TAB>
+
+# Directories under ~/github matching 'fzf'
+cd ~/github/fzf**<TAB>
+```
+
+### Customization
+
+<Tabs>
+  <Tab title="fzf Options">
+    Configure how fzf appears during completion:
+
+    ```bash
+    # General completion options
+    export FZF_COMPLETION_OPTS='--border --info=inline'
+    
+    # Path completion options (e.g., vim **<TAB>)
+    export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+    
+    # Directory completion options (e.g., cd **<TAB>)
+    export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+    ```
+  </Tab>
+  <Tab title="Custom Commands">
+    Use custom commands like `fd` instead of the default walker:
+
+    ```bash
+    # Use fd for listing files
+    _fzf_compgen_path() {
+      fd --hidden --follow --exclude ".git" . "$1"
+    }
+    
+    # Use fd for listing directories
+    _fzf_compgen_dir() {
+      fd --type d --hidden --follow --exclude ".git" . "$1"
+    }
+    ```
+  </Tab>
+  <Tab title="Per-Command">
+    Advanced customization with `_fzf_comprun` function:
+
+    ```bash
+    _fzf_comprun() {
+      local command=$1
+      shift
+    
+      case "$command" in
+        cd)           fzf --preview 'tree -C {} | head -200'   "$@" ;;
+        export|unset) fzf --preview "eval 'echo \$'{}"         "$@" ;;
+        ssh)          fzf --preview 'dig {}'                   "$@" ;;
+        *)            fzf --preview 'bat -n --color=always {}' "$@" ;;
+      esac
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Process IDs
+
+Fuzzy completion for PIDs works with the `kill` command:
+
+```bash
+# Select multiple processes with TAB or Shift-TAB
+kill -9 **<TAB>
+```
+
+This displays a table with:
+- User
+- PID
+- PPID
+- Start time / elapsed time
+- Command
+
+## Host Names
+
+For `ssh` and `telnet` commands, fuzzy completion provides hostname matching:
+
+```bash
+ssh **<TAB>
+telnet **<TAB>
+```
+
+Hostnames are extracted from:
+- `/etc/hosts`
+- `~/.ssh/config`
+- `~/.ssh/config.d/*`
+- `/etc/ssh/ssh_config`
+- `~/.ssh/known_hosts`
+
+### Custom Host Lists
+
+Override `__fzf_list_hosts` to provide your own hostname list:
+
+```bash
+__fzf_list_hosts() {
+  # Set local attribute for non-local variables set by _known_hosts_real()
+  local COMPREPLY=()
+  _known_hosts_real ''
+  printf '%s\n' "${COMPREPLY[@]}" | command sort -u --version-sort
+}
+```
+
+## Environment Variables and Aliases
+
+<Tabs>
+  <Tab title="Bash/Zsh">
+    ```bash
+    # Environment variables
+    export **<TAB>
+    unset **<TAB>
+    printenv **<TAB>
+    
+    # Aliases
+    unalias **<TAB>
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```fish
+    # Environment variables (Shift-TAB in fish)
+    set <SHIFT-TAB>
+    ```
+  </Tab>
+</Tabs>
+
+## Bash: Supported Commands
+
+On bash, fuzzy completion is enabled by default for these commands:
+
+```bash
+awk bat cat code diff diff3 emacs emacsclient ex file ftp g++ gcc gvim head hg hx
+java javac ld less more mvim nvim patch perl python ruby sed sftp sort source tail
+tee uniq vi view vim wc xdg-open basename bunzip2 bzip2 chmod chown curl cp dirname
+du find git grep gunzip gzip hg jar ln ls mv open rm rsync scp svn tar unzip zip
+```
+
+### Enable for Other Commands
+
+Use `_fzf_setup_completion` to enable fuzzy completion for additional commands:
+
+```bash
+# Syntax: _fzf_setup_completion path|dir|var|alias|host COMMANDS...
+
+_fzf_setup_completion path ag git kubectl
+_fzf_setup_completion dir tree
+```
+
+## Custom Fuzzy Completion
+
+Define `_fzf_complete_COMMAND` function to add custom completion:
+
+<Tabs>
+  <Tab title="Bash/Zsh">
+    ```bash
+    # Custom completion for "doge" command
+    _fzf_complete_doge() {
+      _fzf_complete --multi --reverse --prompt="doge> " -- "$@" < <(
+        echo very
+        echo wow
+        echo such
+        echo doge
+      )
+    }
+    
+    # Bash: Register the completion
+    [ -n "$BASH" ] && complete -F _fzf_complete_doge -o default -o bashdefault doge
+    ```
+  </Tab>
+  <Tab title="With Post-Processing">
+    ```bash
+    _fzf_complete_foo() {
+      _fzf_complete --multi --reverse --header-lines=3 -- "$@" < <(
+        ls -al
+      )
+    }
+    
+    _fzf_complete_foo_post() {
+      awk '{print $NF}'
+    }
+    
+    [ -n "$BASH" ] && complete -F _fzf_complete_foo -o default -o bashdefault foo
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```fish
+    function _fzf_complete_git
+      switch $argv[2]
+        case checkout switch
+          _fzf_complete --reverse --no-preview -- $argv < (git branch --all --format='%(refname:short)' | psub)
+    
+        case add
+          function _fzf_complete_git_post
+            awk '{print $NF}'
+          end
+          _fzf_complete --multi --reverse -- $argv < (git status --short | psub)
+    
+        case show log diff
+          function _fzf_complete_git_post
+            awk '{print $1}'
+          end
+          _fzf_complete --reverse --no-sort --preview='git show --color=always {1}' -- $argv < (git log --oneline | psub)
+    
+        case ''
+          __fzf_complete_native "$argv[1] " --query=(commandline -t | string escape)
+    
+        case '*'
+          set -l -- current_token (commandline -t)
+          __fzf_complete_native "$argv $current_token" --query=(string escape -- $current_token) --multi
+      end
+    
+      functions -e _fzf_complete_git_post
+    end
+    ```
+  </Tab>
+</Tabs>
+
+## Fish: Fuzzy Completion Differences
+
+Fish fuzzy completion differs from bash/zsh:
+
+<Warning>
+**Key Differences:**
+
+1. **No trigger sequence** - Uses `Shift-TAB` instead of `**<TAB>`
+2. **Uses native completion** - Relies on fish's completion system, not file traversal
+3. **Limited configuration** - Only `FZF_COMPLETION_OPTS` is supported
+4. **For recursive search** - Use `CTRL-T` binding instead
+</Warning>
+
+```fish
+# Fish fuzzy completion configuration
+set -gx FZF_COMPLETION_OPTS '--border --info=inline'
+```
+
+## Configuration Reference
+
+### Environment Variables
+
+| Variable | Description | Shells |
+|----------|-------------|--------|
+| `FZF_COMPLETION_TRIGGER` | Trigger sequence (default: `**`) | bash, zsh |
+| `FZF_COMPLETION_OPTS` | Options for all completions | bash, zsh, fish |
+| `FZF_COMPLETION_PATH_OPTS` | Options for path completion | bash, zsh |
+| `FZF_COMPLETION_DIR_OPTS` | Options for directory completion | bash, zsh |
+
+### Customization Functions
+
+| Function | Purpose | Shells |
+|----------|---------|--------|
+| `_fzf_compgen_path()` | Generate file/path list | bash, zsh |
+| `_fzf_compgen_dir()` | Generate directory list | bash, zsh |
+| `_fzf_comprun()` | Customize fzf invocation | bash, zsh |
+| `__fzf_list_hosts()` | Generate hostname list | bash, zsh |
+
+## Shell-Specific Guides
+
+<CardGroup cols={3}>
+  <Card title="Bash" icon="terminal" href="/shell/bash">
+    Bash-specific completion configuration
+  </Card>
+  <Card title="Zsh" icon="terminal" href="/shell/zsh">
+    Zsh-specific completion configuration
+  </Card>
+  <Card title="Fish" icon="terminal" href="/shell/fish">
+    Fish-specific completion configuration
+  </Card>
+</CardGroup>

@@ -1,0 +1,257 @@
+---
+title: Vim Integration
+description: Set up and use fzf with Vim
+---
+
+fzf provides a powerful Vim plugin that enables fuzzy finding functionality directly within your editor. The plugin provides core functions for building custom fuzzy-finding commands and a basic `:FZF` command to get started.
+
+## Installation
+
+<Steps>
+  <Step title="Install fzf">
+    First, make sure you have fzf installed on your system. See the [installation guide](/installation) for details.
+  </Step>
+
+  <Step title="Add to Vim runtime path">
+    Once fzf is installed, add the fzf directory to your Vim `runtimepath`. The path depends on your installation method:
+
+    ```vim
+    " If installed using Homebrew
+    set rtp+=/usr/local/opt/fzf
+
+    " If installed using Homebrew on Apple Silicon
+    set rtp+=/opt/homebrew/opt/fzf
+
+    " If you have cloned fzf on ~/.fzf directory
+    set rtp+=~/.fzf
+    ```
+  </Step>
+
+  <Step title="Configure with vim-plug (recommended)">
+    If you use [vim-plug](https://github.com/junegunn/vim-plug), add this to your Vim configuration:
+
+    ```vim
+    " If installed using Homebrew
+    Plug '/usr/local/opt/fzf'
+
+    " If installed using Homebrew on Apple Silicon
+    Plug '/opt/homebrew/opt/fzf'
+
+    " If you have cloned fzf on ~/.fzf directory
+    Plug '~/.fzf'
+    ```
+
+    Or to get the latest plugin file directly from GitHub:
+
+    ```vim
+    Plug 'junegunn/fzf'
+    ```
+  </Step>
+
+  <Step title="Ensure latest binary with fzf#install()">
+    To automatically download and update the fzf binary, use the `fzf#install()` function:
+
+    ```vim
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    ```
+
+    The plugin will pick up the fzf binary from `$PATH`. If not found, it will prompt you to download the latest version.
+  </Step>
+
+  <Step title="Install fzf.vim (optional)">
+    For a collection of useful commands built on top of the base fzf plugin, install [fzf.vim](https://github.com/junegunn/fzf.vim):
+
+    ```vim
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'junegunn/fzf.vim'
+    ```
+  </Step>
+</Steps>
+
+## Core Functions
+
+The fzf Vim plugin provides two main functions:
+
+### fzf#run()
+
+Starts fzf inside Vim with the given spec dictionary:
+
+```vim
+" Basic file selector
+call fzf#run({'sink': 'e'})
+
+" Use git to generate file list
+call fzf#run({'source': 'git ls-files', 'sink': 'e'})
+
+" With layout and options
+call fzf#run({
+  \ 'source': 'git ls-files',
+  \ 'sink': 'e',
+  \ 'options': '--multi --reverse',
+  \ 'down': '40%'
+  \ })
+```
+
+**Available options:**
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `source` | string/list | External command or Vim list to generate input |
+| `sink` | string/funcref | Vim command or function to handle selected items |
+| `sinklist` (or `sink*`) | funcref | Function that takes the list of output lines at once |
+| `options` | string/list | Options to pass to fzf |
+| `dir` | string | Working directory |
+| `up`/`down`/`left`/`right` | number/string | Window position and size |
+| `window` | string/dict | Command to open fzf window or popup settings |
+| `tmux` | string | `--tmux` options (e.g. `90%,70%`) |
+
+### fzf#wrap()
+
+Wraps a spec dictionary with global preferences (`g:fzf_action`, `g:fzf_layout`, `g:fzf_colors`, `g:fzf_history_dir`):
+
+```vim
+" Wrap and run
+call fzf#run(fzf#wrap({'source': 'ls'}))
+
+" Define a command
+command! -bang -complete=dir -nargs=? LS
+  \ call fzf#run(fzf#wrap('ls', {'source': 'ls', 'dir': <q-args>}, <bang>0))
+```
+
+## Basic Usage
+
+### :FZF Command
+
+The plugin provides a basic `:FZF` command:
+
+```vim
+" Look for files under current directory
+:FZF
+
+" Look for files under home directory
+:FZF ~
+
+" With fzf options
+:FZF --reverse --info=inline /tmp
+
+" Fullscreen mode
+:FZF!
+```
+
+**Key bindings:**
+- `Enter` - Open in current window
+- `CTRL-T` - Open in new tab
+- `CTRL-X` - Open in horizontal split
+- `CTRL-V` - Open in vertical split
+
+## Configuration
+
+### Global Options
+
+```vim
+" Custom key bindings
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit'
+  \ }
+
+" Popup window layout (center of screen)
+let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6 } }
+
+" Or use bottom split
+let g:fzf_layout = { 'down': '40%' }
+
+" Color scheme matching
+let g:fzf_colors = {
+  \ 'fg':      ['fg', 'Normal'],
+  \ 'bg':      ['bg', 'Normal'],
+  \ 'hl':      ['fg', 'Comment'],
+  \ 'border':  ['fg', 'Ignore'],
+  \ 'prompt':  ['fg', 'Conditional'],
+  \ 'pointer': ['fg', 'Exception'],
+  \ 'marker':  ['fg', 'Keyword']
+  \ }
+
+" Enable command history
+let g:fzf_history_dir = '~/.local/share/fzf-history'
+```
+
+### Popup Window
+
+Start fzf in a popup window:
+
+```vim
+let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6 } }
+```
+
+Alternatively, use tmux popup (requires tmux 3.2+):
+
+```vim
+if exists('$TMUX')
+  let g:fzf_layout = { 'tmux': '90%,70%' }
+else
+  let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.6 } }
+endif
+```
+
+### Terminal Colors
+
+Configure terminal buffer colors:
+
+```vim
+if has('nvim')
+  let g:terminal_color_0 = '#4e4e4e'
+  let g:terminal_color_1 = '#d68787'
+  " ... more colors
+else
+  let g:terminal_ansi_colors = [
+    \ '#4e4e4e', '#d68787', '#5f865f', '#d8af5f',
+    \ '#85add4', '#d7afaf', '#87afaf', '#d0d0d0'
+    \ ]
+endif
+```
+
+## Advanced Examples
+
+### Color Scheme Selector
+
+```vim
+call fzf#run({
+  \ 'source': map(split(globpath(&rtp, 'colors/*.vim')),
+  \               'fnamemodify(v:val, ":t:r")'),
+  \ 'sink': 'colo',
+  \ 'left': '25%'
+  \ })
+```
+
+### Custom Command with Quickfix
+
+```vim
+function! s:build_quickfix_list(lines)
+  call setqflist(map(copy(a:lines), '{ "filename": v:val, "lnum": 1 }'))
+  copen
+  cc
+endfunction
+
+let g:fzf_action = {
+  \ 'ctrl-q': function('s:build_quickfix_list'),
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-v': 'vsplit'
+  \ }
+```
+
+## Related Projects
+
+- **[fzf.vim](https://github.com/junegunn/fzf.vim)** - A comprehensive collection of fzf-based commands for Vim, including:
+  - `:Files`, `:GFiles`, `:Buffers`, `:Colors`
+  - `:Ag`, `:Rg`, `:Lines`, `:BLines`
+  - `:Tags`, `:Marks`, `:Windows`
+  - `:Commits`, `:BCommits`, `:Commands`
+  - And many more...
+
+## See Also
+
+- [Neovim Integration](/integrations/neovim) - Neovim-specific setup and fzf-lua alternative
+- [Shell Integration](/shell/setup) - Command-line key bindings and completion

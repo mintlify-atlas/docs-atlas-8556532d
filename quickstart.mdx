@@ -1,80 +1,284 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get up and running with fzf in 5 minutes
 ---
 
-## Get started in three steps
+Get started with fzf and learn the basics in just a few minutes.
 
-Get your documentation site running locally and make your first customization.
+<Steps>
+  <Step title="Verify installation">
+    After installing fzf, verify it's working by running:
 
-### Step 1: Set up your local environment
+    ```bash
+    fzf --version
+    ```
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    You should see the version number (0.68.0 or later).
+  </Step>
 
-### Step 2: Deploy your changes
+  <Step title="Try your first search">
+    Let's start with the simplest example. Run fzf without any arguments:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    fzf
+    ```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    fzf will traverse the current directory and display all files. Try typing to search!
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    **Navigation:**
+    - Type to fuzzy search
+    - `CTRL-K` / `CTRL-J` or arrow keys to move
+    - `Enter` to select
+    - `ESC` or `CTRL-C` to exit
+  </Step>
 
-### Step 3: Go live
+  <Step title="Use with pipes">
+    fzf reads from STDIN and writes to STDOUT, making it perfect for Unix pipes:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```bash
+    # Find and open a file in vim
+    find * -type f | fzf | xargs vim
 
-## Next steps
+    # Or use command substitution
+    vim $(find * -type f | fzf)
+    ```
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Set up shell integration">
+    Shell integration adds powerful key bindings. Add this to your shell config:
 
-<CardGroup cols={2}>
+    <Tabs>
+      <Tab title="Bash">
+        Add to `~/.bashrc`:
+        ```bash
+        # Set up fzf key bindings and fuzzy completion
+        eval "$(fzf --bash)"
+        ```
+      </Tab>
+      <Tab title="Zsh">
+        Add to `~/.zshrc`:
+        ```bash
+        # Set up fzf key bindings and fuzzy completion
+        source <(fzf --zsh)
+        ```
+      </Tab>
+      <Tab title="Fish">
+        Add to `~/.config/fish/config.fish`:
+        ```fish
+        # Set up fzf key bindings
+        fzf --fish | source
+        ```
+      </Tab>
+    </Tabs>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    Reload your shell:
+    ```bash
+    source ~/.bashrc  # or ~/.zshrc for zsh
+    ```
+  </Step>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+  <Step title="Try the key bindings">
+    After shell integration, you get these powerful key bindings:
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    **CTRL-T** - Find files and directories
+    ```bash
+    # Press CTRL-T at any time to search for files
+    vim <CTRL-T>  # Select a file to open
+    ```
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    **CTRL-R** - Search command history
+    ```bash
+    # Press CTRL-R to search your shell history
+    <CTRL-R>  # Type to search, Enter to select
+    ```
 
-</CardGroup>
+    **ALT-C** - Change directory
+    ```bash
+    # Press ALT-C to search for a directory and cd into it
+    <ALT-C>  # Select a directory
+    ```
+  </Step>
+</Steps>
+
+## Common Use Cases
+
+### File Navigation
+
+Search and open files quickly:
+
+```bash
+# Find and edit a file
+vim $(fzf)
+
+# Better: Use become() to handle CTRL-C and empty results
+fzf --bind 'enter:become(vim {})'
+```
+
+### Process Management
+
+Find and kill processes:
+
+```bash
+# Interactive process killer
+ps -ef | fzf | awk '{print $2}' | xargs kill -9
+```
+
+### Git Integration
+
+Work with Git more efficiently:
+
+```bash
+# Checkout a branch
+git branch | fzf | xargs git checkout
+
+# View a commit
+git log --oneline | fzf | awk '{print $1}' | xargs git show
+```
+
+## Search Syntax
+
+fzf supports powerful search syntax:
+
+| Pattern   | Match Type              | Example                          |
+|-----------|-------------------------|----------------------------------|
+| `sbtrkt`  | Fuzzy match             | Matches "subprocess.txt"         |
+| `'wild`   | Exact match             | Matches "wild" exactly           |
+| `^music`  | Prefix match            | Matches "music.mp3"              |
+| `.mp3$`   | Suffix match            | Matches "song.mp3"               |
+| `!fire`   | Inverse match           | Excludes items with "fire"       |
+| `go$ \| rb$ \| py$` | OR operator  | Matches files ending in go, rb, or py |
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Try typing `^src .go$` to find all Go files in the src directory!
 </Note>
+
+## Display Options
+
+### Inline Mode
+
+Use `--height` to show fzf below the cursor:
+
+```bash
+fzf --height 40% --layout reverse --border
+```
+
+### Tmux Popup
+
+If you're using tmux, fzf can open in a popup:
+
+```bash
+fzf --tmux center
+fzf --tmux bottom,40%
+```
+
+<Tip>
+  Add these options to `FZF_DEFAULT_OPTS` to make them permanent:
+  ```bash
+  export FZF_DEFAULT_OPTS='--height 40% --layout reverse --border'
+  ```
+</Tip>
+
+## Environment Variables
+
+Configure fzf's behavior with environment variables:
+
+<ParamField path="FZF_DEFAULT_COMMAND" type="string">
+  Command to use for generating the file list when fzf runs without STDIN input.
+
+  ```bash
+  # Use fd instead of find (respects .gitignore)
+  export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+  ```
+</ParamField>
+
+<ParamField path="FZF_DEFAULT_OPTS" type="string">
+  Default options for fzf.
+
+  ```bash
+  export FZF_DEFAULT_OPTS='--height 40% --layout reverse --border --inline-info'
+  ```
+</ParamField>
+
+<ParamField path="FZF_CTRL_T_COMMAND" type="string">
+  Command for CTRL-T key binding.
+
+  ```bash
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  ```
+</ParamField>
+
+## Preview Window
+
+Add a preview window to see file contents:
+
+```bash
+# Preview with cat
+fzf --preview 'cat {}'
+
+# Preview with syntax highlighting (requires bat)
+fzf --preview 'bat --color=always {}'
+```
+
+Make it permanent in `FZF_CTRL_T_OPTS`:
+
+```bash
+export FZF_CTRL_T_OPTS="
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+```
+
+<Warning>
+  Don't add `--preview` to `FZF_DEFAULT_OPTS` as it won't work with non-file inputs like process lists or command history.
+</Warning>
+
+## Complete Example
+
+Here's a complete setup combining multiple features:
+
+```bash
+# ~/.bashrc or ~/.zshrc
+
+# Use fd for file listing (respects .gitignore)
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+
+# Default options
+export FZF_DEFAULT_OPTS='
+  --height 40%
+  --layout reverse
+  --border
+  --inline-info
+  --color=fg:#c0caf5,bg:#1a1b26,hl:#bb9af7
+  --color=fg+:#c0caf5,bg+:#292e42,hl+:#7dcfff
+  --color=info:#7aa2f7,prompt:#7dcfff,pointer:#7dcfff
+  --color=marker:#9ece6a,spinner:#9ece6a,header:#9ece6a'
+
+# CTRL-T options
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_CTRL_T_OPTS="
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+# ALT-C options
+export FZF_ALT_C_OPTS="
+  --preview 'tree -C {} | head -200'"
+
+# Set up fzf key bindings and fuzzy completion
+eval "$(fzf --bash)"  # or source <(fzf --zsh) for zsh
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Core Concepts" icon="book" href="/usage/basic-usage">
+    Learn about fzf's features in depth
+  </Card>
+  <Card title="Shell Integration" icon="terminal" href="/shell/setup">
+    Master shell key bindings and completion
+  </Card>
+  <Card title="Advanced Usage" icon="wand-magic-sparkles" href="/advanced/keybindings-actions">
+    Explore custom key bindings and actions
+  </Card>
+  <Card title="Examples" icon="lightbulb" href="/examples/ripgrep">
+    See real-world integration examples
+  </Card>
+</CardGroup>

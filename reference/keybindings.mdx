@@ -1,0 +1,908 @@
+---
+title: Key Bindings
+description: Complete reference for fzf key bindings and custom actions
+---
+
+fzf provides extensive key binding support, allowing you to customize the behavior of nearly every key. You can bind keys to built-in actions or execute external commands.
+
+## Default Key Bindings
+
+### Navigation
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `CTRL-K` / `CTRL-P` | Move up | Move cursor up one line |
+| `CTRL-J` / `CTRL-N` | Move down | Move cursor down one line |
+| `Up` | Move up | Move cursor up one line |
+| `Down` | Move down | Move cursor down one line |
+| `CTRL-U` | Half page up | Scroll up half a page |
+| `CTRL-D` | Half page down | Scroll down half a page |
+| `Page-Up` | Page up | Scroll up one page |
+| `Page-Down` | Page down | Scroll down one page |
+| `Home` / `CTRL-A` | First | Jump to first item |
+| `End` / `CTRL-E` | Last | Jump to last item |
+
+### Selection
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Enter` | Accept | Accept current selection and exit |
+| `CTRL-C` / `CTRL-G` / `ESC` | Abort | Cancel and exit with no selection |
+| `TAB` | Toggle + Down | Toggle selection and move down (multi-select mode) |
+| `Shift-TAB` | Toggle + Up | Toggle selection and move up (multi-select mode) |
+| `Alt-Enter` | Print query and accept | Print query and current selection |
+
+### Input Editing
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `CTRL-H` / `Backspace` | Backward delete char | Delete character before cursor |
+| `CTRL-W` | Backward kill word | Delete word before cursor |
+| `Alt-Backspace` | Backward kill word | Delete word before cursor |
+| `CTRL-U` | Unix line discard | Delete from cursor to beginning of line |
+| `CTRL-K` | Kill line | Delete from cursor to end of line |
+| `CTRL-A` | Beginning of line | Move cursor to beginning |
+| `CTRL-E` | End of line | Move cursor to end |
+| `CTRL-B` / `Left` | Backward char | Move cursor left |
+| `CTRL-F` / `Right` | Forward char | Move cursor right |
+| `Alt-B` | Backward word | Move cursor to previous word |
+| `Alt-F` | Forward word | Move cursor to next word |
+| `CTRL-Y` | Yank | Paste the killed text |
+
+### Mouse
+
+| Action | Description |
+|--------|-------------|
+| Click | Select item |
+| Double-click | Accept item |
+| Scroll | Scroll list |
+| Shift-Click | Toggle selection (multi-select mode) |
+| Shift-Scroll | Move selection (multi-select mode) |
+
+## Custom Key Bindings
+
+Use the `--bind` option to create custom key bindings.
+
+### Basic Syntax
+
+```bash
+fzf --bind 'KEY:ACTION'
+fzf --bind 'KEY:ACTION1+ACTION2'  # Multiple actions
+fzf --bind 'KEY1:ACTION,KEY2:ACTION'  # Multiple bindings
+```
+
+### Key Names
+
+#### Regular Keys
+```bash
+# Printable characters
+fzf --bind 'a:accept'
+fzf --bind 'space:toggle'
+fzf --bind ',:toggle'  # Special: comma
+fzf --bind '+:select'  # Special: plus
+```
+
+#### Control Keys
+```bash
+fzf --bind 'ctrl-a:select-all'
+fzf --bind 'ctrl-d:deselect-all'
+fzf --bind 'ctrl-t:toggle-all'
+fzf --bind 'ctrl-space:toggle'
+fzf --bind 'ctrl-/:toggle-preview'
+fzf --bind 'ctrl-\:toggle-wrap'
+```
+
+#### Alt Keys
+```bash
+fzf --bind 'alt-a:select-all'
+fzf --bind 'alt-enter:print-query'
+fzf --bind 'alt-space:toggle'
+fzf --bind 'alt-/:toggle-preview'
+```
+
+#### Special Keys
+```bash
+fzf --bind 'enter:accept'
+fzf --bind 'esc:abort'
+fzf --bind 'tab:toggle+down'
+fzf --bind 'btab:toggle+up'  # Shift-Tab
+fzf --bind 'up:preview-up'
+fzf --bind 'down:preview-down'
+fzf --bind 'left:backward-char'
+fzf --bind 'right:forward-char'
+fzf --bind 'home:first'
+fzf --bind 'end:last'
+fzf --bind 'insert:toggle'
+fzf --bind 'delete:delete-char'
+fzf --bind 'backspace:backward-delete-char'
+fzf --bind 'page-up:page-up'
+fzf --bind 'page-down:page-down'
+```
+
+#### Function Keys
+```bash
+fzf --bind 'f1:toggle-preview'
+fzf --bind 'f2:toggle-sort'
+fzf --bind 'f12:abort'
+```
+
+#### Mouse Events
+```bash
+fzf --bind 'left-click:accept'
+fzf --bind 'right-click:toggle'
+fzf --bind 'double-click:accept'
+fzf --bind 'scroll-up:preview-up'
+fzf --bind 'scroll-down:preview-down'
+```
+
+#### Event Triggers
+```bash
+fzf --bind 'start:reload(find . -type f)'  # On start
+fzf --bind 'load:first'  # After loading
+fzf --bind 'focus:transform-preview-label:echo {}'  # On focus change
+fzf --bind 'result:first'  # After search result update
+fzf --bind 'change:reload(rg {q})'  # On query change
+fzf --bind 'backward-eof:abort'  # When backspace at empty query
+fzf --bind 'one:accept'  # When only one item matches
+fzf --bind 'zero:abort'  # When no items match
+```
+
+## Action Reference
+
+### Navigation Actions
+
+<ParamField path="up" type="action">
+  Move cursor up one line.
+  
+  ```bash
+  fzf --bind 'ctrl-k:up'
+  ```
+</ParamField>
+
+<ParamField path="down" type="action">
+  Move cursor down one line.
+  
+  ```bash
+  fzf --bind 'ctrl-j:down'
+  ```
+</ParamField>
+
+<ParamField path="up-match" type="action">
+  Move to previous match (skip non-matching items in raw mode).
+  
+  ```bash
+  fzf --raw --bind 'ctrl-p:up-match'
+  ```
+</ParamField>
+
+<ParamField path="down-match" type="action">
+  Move to next match (skip non-matching items in raw mode).
+  
+  ```bash
+  fzf --raw --bind 'ctrl-n:down-match'
+  ```
+</ParamField>
+
+<ParamField path="page-up" type="action">
+  Scroll up one page.
+  
+  ```bash
+  fzf --bind 'ctrl-b:page-up'
+  ```
+</ParamField>
+
+<ParamField path="page-down" type="action">
+  Scroll down one page.
+  
+  ```bash
+  fzf --bind 'ctrl-f:page-down'
+  ```
+</ParamField>
+
+<ParamField path="half-page-up" type="action">
+  Scroll up half a page.
+  
+  ```bash
+  fzf --bind 'ctrl-u:half-page-up'
+  ```
+</ParamField>
+
+<ParamField path="half-page-down" type="action">
+  Scroll down half a page.
+  
+  ```bash
+  fzf --bind 'ctrl-d:half-page-down'
+  ```
+</ParamField>
+
+<ParamField path="first" type="action">
+  Jump to first item.
+  
+  ```bash
+  fzf --bind 'ctrl-home:first'
+  ```
+</ParamField>
+
+<ParamField path="last" type="action">
+  Jump to last item.
+  
+  ```bash
+  fzf --bind 'ctrl-end:last'
+  ```
+</ParamField>
+
+<ParamField path="best" type="action">
+  Jump to the best match.
+  
+  ```bash
+  fzf --bind 'ctrl-b:best'
+  ```
+</ParamField>
+
+<ParamField path="jump" type="action">
+  Enter jump mode (quick navigation using labels).
+  
+  ```bash
+  fzf --bind 'ctrl-j:jump'
+  ```
+</ParamField>
+
+<ParamField path="jump-accept" type="action">
+  Enter jump mode and accept on selection.
+  
+  ```bash
+  fzf --bind 'ctrl-g:jump-accept'
+  ```
+</ParamField>
+
+### Selection Actions
+
+<ParamField path="accept" type="action">
+  Accept current selection and exit.
+  
+  ```bash
+  fzf --bind 'ctrl-m:accept'
+  ```
+</ParamField>
+
+<ParamField path="accept-non-empty" type="action">
+  Accept only if there's a selection.
+  
+  ```bash
+  fzf --bind 'enter:accept-non-empty'
+  ```
+</ParamField>
+
+<ParamField path="accept-or-print-query" type="action">
+  Accept selection, or print query if no selection.
+  
+  ```bash
+  fzf --bind 'enter:accept-or-print-query'
+  ```
+</ParamField>
+
+<ParamField path="abort" type="action">
+  Cancel and exit with no selection.
+  
+  ```bash
+  fzf --bind 'esc:abort'
+  ```
+</ParamField>
+
+<ParamField path="print-query" type="action">
+  Print query and exit.
+  
+  ```bash
+  fzf --bind 'alt-enter:print-query'
+  ```
+</ParamField>
+
+<ParamField path="select" type="action">
+  Select current item (multi-select mode).
+  
+  ```bash
+  fzf --multi --bind 'right:select'
+  ```
+</ParamField>
+
+<ParamField path="deselect" type="action">
+  Deselect current item (multi-select mode).
+  
+  ```bash
+  fzf --multi --bind 'left:deselect'
+  ```
+</ParamField>
+
+<ParamField path="toggle" type="action">
+  Toggle selection of current item (multi-select mode).
+  
+  ```bash
+  fzf --multi --bind 'space:toggle'
+  ```
+</ParamField>
+
+<ParamField path="toggle-down" type="action">
+  Toggle selection and move down.
+  
+  ```bash
+  fzf --multi --bind 'tab:toggle-down'
+  ```
+</ParamField>
+
+<ParamField path="toggle-up" type="action">
+  Toggle selection and move up.
+  
+  ```bash
+  fzf --multi --bind 'btab:toggle-up'
+  ```
+</ParamField>
+
+<ParamField path="toggle-all" type="action">
+  Toggle all items.
+  
+  ```bash
+  fzf --multi --bind 'ctrl-a:toggle-all'
+  ```
+</ParamField>
+
+<ParamField path="select-all" type="action">
+  Select all items.
+  
+  ```bash
+  fzf --multi --bind 'ctrl-a:select-all'
+  ```
+</ParamField>
+
+<ParamField path="deselect-all" type="action">
+  Deselect all items.
+  
+  ```bash
+  fzf --multi --bind 'ctrl-d:deselect-all'
+  ```
+</ParamField>
+
+<ParamField path="toggle-in" type="action">
+  Select items within the current range (used after marking range start).
+  
+  ```bash
+  fzf --multi --bind 'ctrl-t:toggle-in'
+  ```
+</ParamField>
+
+<ParamField path="toggle-out" type="action">
+  Deselect items within the current range.
+  
+  ```bash
+  fzf --multi --bind 'ctrl-r:toggle-out'
+  ```
+</ParamField>
+
+### Input Editing Actions
+
+<ParamField path="backward-char" type="action">
+  Move cursor backward one character.
+  
+  ```bash
+  fzf --bind 'left:backward-char'
+  ```
+</ParamField>
+
+<ParamField path="forward-char" type="action">
+  Move cursor forward one character.
+  
+  ```bash
+  fzf --bind 'right:forward-char'
+  ```
+</ParamField>
+
+<ParamField path="backward-word" type="action">
+  Move cursor backward one word.
+  
+  ```bash
+  fzf --bind 'alt-left:backward-word'
+  ```
+</ParamField>
+
+<ParamField path="forward-word" type="action">
+  Move cursor forward one word.
+  
+  ```bash
+  fzf --bind 'alt-right:forward-word'
+  ```
+</ParamField>
+
+<ParamField path="beginning-of-line" type="action">
+  Move cursor to beginning of line.
+  
+  ```bash
+  fzf --bind 'home:beginning-of-line'
+  ```
+</ParamField>
+
+<ParamField path="end-of-line" type="action">
+  Move cursor to end of line.
+  
+  ```bash
+  fzf --bind 'end:end-of-line'
+  ```
+</ParamField>
+
+<ParamField path="backward-delete-char" type="action">
+  Delete character before cursor.
+  
+  ```bash
+  fzf --bind 'backspace:backward-delete-char'
+  ```
+</ParamField>
+
+<ParamField path="delete-char" type="action">
+  Delete character under cursor.
+  
+  ```bash
+  fzf --bind 'delete:delete-char'
+  ```
+</ParamField>
+
+<ParamField path="backward-kill-word" type="action">
+  Delete word before cursor.
+  
+  ```bash
+  fzf --bind 'ctrl-w:backward-kill-word'
+  ```
+</ParamField>
+
+<ParamField path="kill-word" type="action">
+  Delete word after cursor.
+  
+  ```bash
+  fzf --bind 'alt-d:kill-word'
+  ```
+</ParamField>
+
+<ParamField path="unix-line-discard" type="action">
+  Delete from cursor to beginning of line.
+  
+  ```bash
+  fzf --bind 'ctrl-u:unix-line-discard'
+  ```
+</ParamField>
+
+<ParamField path="kill-line" type="action">
+  Delete from cursor to end of line.
+  
+  ```bash
+  fzf --bind 'ctrl-k:kill-line'
+  ```
+</ParamField>
+
+<ParamField path="clear-query" type="action">
+  Clear the entire query.
+  
+  ```bash
+  fzf --bind 'ctrl-x:clear-query'
+  ```
+</ParamField>
+
+<ParamField path="replace-query" type="action">
+  Replace query with current selection.
+  
+  ```bash
+  fzf --bind 'ctrl-r:replace-query'
+  ```
+</ParamField>
+
+<ParamField path="yank" type="action">
+  Paste the killed text.
+  
+  ```bash
+  fzf --bind 'ctrl-y:yank'
+  ```
+</ParamField>
+
+### Display Toggle Actions
+
+<ParamField path="toggle-preview" type="action">
+  Toggle preview window visibility.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'ctrl-/:toggle-preview'
+  ```
+</ParamField>
+
+<ParamField path="show-preview" type="action">
+  Show preview window.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'ctrl-p:show-preview'
+  ```
+</ParamField>
+
+<ParamField path="hide-preview" type="action">
+  Hide preview window.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'ctrl-h:hide-preview'
+  ```
+</ParamField>
+
+<ParamField path="toggle-wrap" type="action">
+  Toggle line wrapping.
+  
+  ```bash
+  fzf --bind 'ctrl-w:toggle-wrap'
+  ```
+</ParamField>
+
+<ParamField path="toggle-sort" type="action">
+  Toggle sorting.
+  
+  ```bash
+  fzf --bind 'ctrl-r:toggle-sort'
+  ```
+</ParamField>
+
+<ParamField path="toggle-search" type="action">
+  Toggle search/disabled mode.
+  
+  ```bash
+  fzf --bind 'ctrl-s:toggle-search'
+  ```
+</ParamField>
+
+<ParamField path="toggle-track" type="action">
+  Toggle result tracking.
+  
+  ```bash
+  fzf --bind 'ctrl-t:toggle-track'
+  ```
+</ParamField>
+
+<ParamField path="toggle-header" type="action">
+  Toggle header visibility.
+  
+  ```bash
+  fzf --header 'Header text' --bind 'ctrl-h:toggle-header'
+  ```
+</ParamField>
+
+<ParamField path="toggle-input" type="action">
+  Toggle input section visibility.
+  
+  ```bash
+  fzf --bind 'ctrl-i:toggle-input'
+  ```
+</ParamField>
+
+### Preview Actions
+
+<ParamField path="preview-up" type="action">
+  Scroll preview window up one line.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'shift-up:preview-up'
+  ```
+</ParamField>
+
+<ParamField path="preview-down" type="action">
+  Scroll preview window down one line.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'shift-down:preview-down'
+  ```
+</ParamField>
+
+<ParamField path="preview-page-up" type="action">
+  Scroll preview window up one page.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'alt-up:preview-page-up'
+  ```
+</ParamField>
+
+<ParamField path="preview-page-down" type="action">
+  Scroll preview window down one page.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'alt-down:preview-page-down'
+  ```
+</ParamField>
+
+<ParamField path="preview-half-page-up" type="action">
+  Scroll preview window up half a page.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'ctrl-u:preview-half-page-up'
+  ```
+</ParamField>
+
+<ParamField path="preview-half-page-down" type="action">
+  Scroll preview window down half a page.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'ctrl-d:preview-half-page-down'
+  ```
+</ParamField>
+
+<ParamField path="preview-top" type="action">
+  Scroll to top of preview.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'home:preview-top'
+  ```
+</ParamField>
+
+<ParamField path="preview-bottom" type="action">
+  Scroll to bottom of preview.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'end:preview-bottom'
+  ```
+</ParamField>
+
+<ParamField path="refresh-preview" type="action">
+  Refresh the preview window.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'f5:refresh-preview'
+  ```
+</ParamField>
+
+### Execute Actions
+
+<ParamField path="execute(...)" type="action">
+  Execute command and return to fzf. Use `{}` for current item, `{+}` for all selected items.
+  
+  ```bash
+  # Open file in less
+  fzf --bind 'f1:execute(less -f {})'
+  
+  # Delete files
+  fzf --multi --bind 'ctrl-d:execute(rm {+})'
+  
+  # Git add files
+  fzf --multi --bind 'ctrl-a:execute(git add {+})'
+  ```
+</ParamField>
+
+<ParamField path="execute-silent(...)" type="action">
+  Execute command silently without showing output.
+  
+  ```bash
+  # Copy to clipboard
+  fzf --bind 'ctrl-y:execute-silent(echo {} | pbcopy)'
+  
+  # Open in background
+  fzf --bind 'ctrl-o:execute-silent(open {})'
+  ```
+</ParamField>
+
+<ParamField path="execute-multi(...)" type="action">
+  Execute command for each selected item.
+  
+  ```bash
+  # Process each file individually
+  fzf --multi --bind 'ctrl-p:execute-multi(echo "Processing: {}")'
+  ```
+</ParamField>
+
+<ParamField path="become(...)" type="action">
+  Replace fzf process with the command (no return to fzf).
+  
+  ```bash
+  # Open in vim
+  fzf --bind 'enter:become(vim {})'
+  
+  # Open multiple files
+  fzf --multi --bind 'enter:become(vim {+})'
+  
+  # Different actions for different keys
+  fzf --bind 'enter:become(vim {}),ctrl-e:become(emacs {})'
+  ```
+</ParamField>
+
+### Dynamic Actions
+
+<ParamField path="reload(...)" type="action">
+  Reload the candidate list with new command.
+  
+  ```bash
+  # Reload process list
+  ps -ef | fzf --bind 'ctrl-r:reload(ps -ef)'
+  
+  # Interactive ripgrep
+  fzf --bind 'change:reload(rg -i {q})' --disabled
+  
+  # Switch between file types
+  fzf --bind 'ctrl-f:reload(find . -type f),ctrl-d:reload(find . -type d)'
+  ```
+</ParamField>
+
+<ParamField path="reload-sync(...)" type="action">
+  Reload synchronously (wait for command to complete).
+  
+  ```bash
+  fzf --bind 'ctrl-r:reload-sync(expensive-command)'
+  ```
+</ParamField>
+
+<ParamField path="preview(...)" type="action">
+  Change preview command.
+  
+  ```bash
+  # Dynamic preview
+  fzf --bind 'ctrl-/:preview(bat --color=always {})'
+  ```
+</ParamField>
+
+<ParamField path="change-preview(...)" type="action">
+  Change preview command dynamically.
+  
+  ```bash
+  fzf --preview 'cat {}' --bind 'ctrl-b:change-preview(bat --color=always {})'
+  ```
+</ParamField>
+
+<ParamField path="change-preview-window(...)" type="action">
+  Change preview window options.
+  
+  ```bash
+  # Toggle preview position
+  fzf --preview 'cat {}' --bind 'ctrl-/:change-preview-window(down|right)'
+  
+  # Cycle through layouts
+  fzf --preview 'cat {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'
+  ```
+</ParamField>
+
+<ParamField path="change-query(...)" type="action">
+  Change the query string.
+  
+  ```bash
+  fzf --bind 'ctrl-space:change-query(TODO)'
+  ```
+</ParamField>
+
+<ParamField path="change-prompt(...)" type="action">
+  Change the prompt string.
+  
+  ```bash
+  fzf --bind 'ctrl-p:change-prompt(New prompt> )'
+  ```
+</ParamField>
+
+<ParamField path="transform(...)" type="action">
+  Transform output of command and execute as actions.
+  
+  ```bash
+  # Conditional action
+  fzf --bind 'enter:transform:[[ -d {} ]] && echo become(cd {}) || echo become(vim {})'
+  ```
+</ParamField>
+
+### Binding Management
+
+<ParamField path="unbind(...)" type="action">
+  Unbind key(s).
+  
+  ```bash
+  # Disable ctrl-c
+  fzf --bind 'start:unbind(ctrl-c)'
+  ```
+</ParamField>
+
+<ParamField path="rebind(...)" type="action">
+  Rebind previously unbound key(s).
+  
+  ```bash
+  fzf --bind 'f1:unbind(ctrl-c),f2:rebind(ctrl-c)'
+  ```
+</ParamField>
+
+<ParamField path="toggle-bind(...)" type="action">
+  Toggle key binding between bound and unbound.
+  
+  ```bash
+  fzf --bind 'ctrl-x:toggle-bind(ctrl-c)'
+  ```
+</ParamField>
+
+## Advanced Examples
+
+### Multi-Action Bindings
+
+```bash
+# Select and move down
+fzf --multi --bind 'space:select+down'
+
+# Toggle all and jump to first
+fzf --multi --bind 'ctrl-a:select-all+first'
+
+# Clear query and reload
+fzf --bind 'ctrl-x:clear-query+reload(find .)'
+```
+
+### Conditional Actions with Transform
+
+```bash
+# Different actions based on selection
+fzf --bind 'enter:transform:
+  if [[ -d {} ]]; then
+    echo become(cd {})
+  elif [[ -f {} ]]; then
+    echo become(vim {})
+  fi'
+
+# Dynamic preview based on file type
+fzf --bind 'focus:transform-preview-label:echo [ {} ]' \
+    --bind 'focus:transform:
+      if [[ {} == *.jpg ]] || [[ {} == *.png ]]; then
+        echo "change-preview(chafa {})"
+      else
+        echo "change-preview(bat --color=always {})"
+      fi'
+```
+
+### Interactive Ripgrep
+
+```bash
+rg_prefix='rg --column --line-number --no-heading --color=always --smart-case'
+fzf --disabled --ansi \
+    --bind "start:reload:$rg_prefix ''" \
+    --bind "change:reload:$rg_prefix {q} || true" \
+    --bind 'enter:become(vim {1} +{2})' \
+    --delimiter : \
+    --preview 'bat --color=always {1} --highlight-line {2}' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3'
+```
+
+### Git Integration
+
+```bash
+# Interactive git file selector
+git ls-files | fzf \
+  --multi \
+  --preview 'git diff --color=always {}' \
+  --bind 'ctrl-a:select-all' \
+  --bind 'ctrl-d:deselect-all' \
+  --bind 'ctrl-g:execute(git add {+})' \
+  --bind 'ctrl-r:execute(git reset {+})' \
+  --bind 'ctrl-c:execute(git commit)'
+```
+
+### File Manager
+
+```bash
+fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}' \
+    --bind 'ctrl-d:execute(rm {})+reload(find . -type f)' \
+    --bind 'ctrl-r:execute(mv {} {}.bak)+reload(find . -type f)' \
+    --bind 'ctrl-e:execute($EDITOR {})' \
+    --bind 'ctrl-o:execute(open {})' \
+    --bind 'ctrl-y:execute-silent(echo {} | pbcopy)'
+```
+
+## Placeholders
+
+Use these placeholders in execute actions:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{}` | Current item |
+| `{+}` | All selected items (space-separated) |
+| `{n}` | Item at index n (1-based) |
+| `{q}` | Current query string |
+| `{..}` | All items in range |
+| `{1}`, `{2}`, ... | Fields at index (with `--delimiter`) |
+| `{-1}`, `{-2}`, ... | Fields from end |
+
+## Environment Variables in Bindings
+
+These variables are available in execute commands:
+
+| Variable | Description |
+|----------|-------------|
+| `$FZF_QUERY` | Current query string |
+| `$FZF_MATCH_COUNT` | Number of matches |
+| `$FZF_SELECT_COUNT` | Number of selected items |
+| `$FZF_TOTAL_COUNT` | Total number of items |
+| `$FZF_PREVIEW_LABEL` | Current preview label |
+| `$FZF_BORDER_LABEL` | Current border label |

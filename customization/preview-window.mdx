@@ -1,0 +1,389 @@
+---
+title: Preview Window
+description: Configure preview window for files, images, and custom content
+---
+
+The preview window is one of fzf's most powerful features, allowing you to see detailed information about items before selecting them. It supports text, ANSI colors, syntax highlighting, and even images.
+
+## Basic Preview Window
+
+Enable the preview window with the `--preview` option:
+
+```bash
+# {} is replaced with the currently selected item
+fzf --preview 'cat {}'
+
+# Preview file type information
+fzf --preview 'file {}'
+
+# Preview with head (first few lines)
+fzf --preview 'head -n 50 {}'
+```
+
+The preview command is executed with your `$SHELL` using `$SHELL -c COMMAND`.
+
+<Warning>
+  Since fzf is a general-purpose text filter, **do not add `--preview` to `$FZF_DEFAULT_OPTS`**. It will break when fzf is used with non-file inputs like process lists, command history, or numbers.
+  
+  ```bash
+  # *** DO NOT DO THIS ***
+  export FZF_DEFAULT_OPTS='--preview "bat --color=always {}"'
+  
+  # These will fail:
+  ps -ef | fzf
+  seq 100 | fzf
+  history | fzf
+  ```
+</Warning>
+
+## Syntax Highlighting with Bat
+
+[Bat](https://github.com/sharkdp/bat) is a cat clone with syntax highlighting and Git integration. It's the recommended tool for file previews:
+
+```bash
+# Basic bat preview
+fzf --preview 'bat --color=always {}'
+
+# With line numbers and style
+fzf --preview 'bat --style=numbers --color=always {}'
+
+# Limit to first 500 lines for performance
+fzf --preview 'bat --style=numbers --color=always --line-range :500 {}'
+```
+
+On some systems, bat is installed as `batcat`:
+
+```bash
+fzf --preview 'batcat --color=always {}'
+```
+
+### Highlighting Specific Lines
+
+You can highlight specific lines in the preview, useful when showing search results:
+
+```bash
+# Highlight line 42
+fzf --preview 'bat --style=numbers --color=always --highlight-line 42 {}'
+
+# Dynamic line highlighting from search results
+git grep --line-number . | \
+  fzf --delimiter : \
+      --preview 'bat --style=numbers --color=always --highlight-line {2} {1}'
+```
+
+## Preview Window Configuration
+
+Customize the preview window position, size, and behavior with `--preview-window`:
+
+```bash
+# Position and size
+fzf --preview 'bat --color=always {}' --preview-window right,50%
+fzf --preview 'bat --color=always {}' --preview-window up,40%
+fzf --preview 'bat --color=always {}' --preview-window down,60%
+fzf --preview 'bat --color=always {}' --preview-window left,30%
+
+# Hide line numbers on top N lines (useful for headers)
+fzf --preview 'bat --color=always {}' --preview-window '~3'
+
+# Default to hidden, toggle with a key binding
+fzf --preview 'bat --color=always {}' \
+    --preview-window hidden \
+    --bind 'ctrl-/:toggle-preview'
+
+# Cycle through different layouts
+fzf --preview 'bat --color=always {}' \
+    --bind 'ctrl-/:change-preview-window(down|hidden|)'
+```
+
+### Preview Window Options
+
+| Option | Description |
+| :--- | :--- |
+| `up\|down\|left\|right` | Position of the preview window |
+| `SIZE[%]` | Size of the preview window (e.g., `50%`, `80`) |
+| `~N` | Hide first N lines (useful for skipping headers) |
+| `+N` | Start at line N |
+| `+{N}` | Start at line number from field N |
+| `border-STYLE` | Border style (rounded, sharp, bold, etc.) |
+| `wrap` | Enable line wrapping |
+| `nowrap` | Disable line wrapping |
+| `hidden` | Start with preview hidden |
+| `nohidden` | Show preview by default |
+| `follow` | Auto-scroll to bottom |
+| `nofollow` | Don't auto-scroll |
+
+### Preview Window with Borders
+
+```bash
+# Horizontal border
+fzf --preview 'bat --color=always {}' \
+    --preview-window up,1,border-horizontal
+
+# Rounded border
+fzf --preview 'bat --color=always {}' \
+    --preview-window right,50%,border-rounded
+
+# Border with label
+fzf --preview 'bat --color=always {}' \
+    --preview-window border-rounded \
+    --bind 'focus:transform-preview-label:echo " 📄 {1} "'
+```
+
+## Alternative Syntax Highlighters
+
+If you don't have bat, you can use other syntax highlighters:
+
+### Highlight
+
+```bash
+fzf --preview 'highlight -O ansi -l {}'
+```
+
+### Pygments
+
+```bash
+fzf --preview 'pygmentize -g {}'
+```
+
+### Source-highlight
+
+```bash
+fzf --preview 'source-highlight --out-format=esc -o STDOUT -i {}'
+```
+
+## Preview Window for Different Content Types
+
+### Directory Preview with Tree
+
+```bash
+# Preview directory structure
+fd --type d | fzf --preview 'tree -C {} | head -200'
+
+# With exa/eza
+fd --type d | fzf --preview 'eza --tree --level=2 --color=always {}'
+```
+
+### Git Commits
+
+```bash
+# Preview git commit
+git log --oneline | \
+  fzf --preview 'git show --color=always {1}'
+
+# With diff-so-fancy
+git log --oneline | \
+  fzf --preview 'git show --color=always {1} | diff-so-fancy'
+```
+
+### Archive Files
+
+```bash
+# Preview tar archives
+find . -name '*.tar.gz' | \
+  fzf --preview 'tar tzf {}'
+
+# Preview zip archives
+find . -name '*.zip' | \
+  fzf --preview 'unzip -l {}'
+```
+
+### Processes
+
+```bash
+# Preview process details
+ps -ef | fzf --bind 'focus:transform-preview:ps -p {2}'
+```
+
+## Image Preview
+
+fzf can display images in the preview window using various protocols. The `fzf-preview.sh` script handles this automatically.
+
+### Supported Image Protocols
+
+fzf supports three image rendering protocols:
+
+1. **Kitty graphics protocol** - Best performance, works in Kitty and Ghostty terminals
+2. **iTerm2 inline images** - Works in iTerm2 terminal
+3. **Sixel** - Works in Sixel-capable terminals (xterm, mlterm, etc.)
+
+### Using fzf-preview.sh
+
+The `fzf-preview.sh` script automatically detects and uses the best available image protocol:
+
+```bash
+# Preview files and images
+fzf --preview 'fzf-preview.sh {}'
+
+# Find image files and preview them
+fd -e jpg -e jpeg -e png -e gif | \
+  fzf --preview 'fzf-preview.sh {}'
+```
+
+### How fzf-preview.sh Works
+
+The script detects the file type and chooses the appropriate preview method:
+
+**For images:**
+1. Tries **Kitty/Ghostty** with `kitten icat` (if available)
+2. Falls back to **Sixel** with `chafa` (if available)
+3. Falls back to **iTerm2** with `imgcat` (if available)
+4. Falls back to `file` command for file info
+
+**For text files:**
+- Uses `bat` or `batcat` for syntax highlighting
+- Falls back to `cat` if bat is not available
+- Highlights specific lines when line numbers are provided
+
+**For binary files:**
+- Shows file type information using `file` command
+
+### Dependencies for Image Preview
+
+Install the appropriate tools based on your terminal:
+
+```bash
+# For Kitty/Ghostty terminals (best option)
+# kitten is included with Kitty
+
+# For Sixel support (universal)
+brew install chafa          # macOS
+sudo apt install chafa      # Debian/Ubuntu
+sudo dnf install chafa      # Fedora
+
+# For iTerm2 (macOS only)
+brew install imgcat
+
+# For syntax highlighting
+brew install bat            # macOS
+sudo apt install bat        # Debian/Ubuntu (as batcat)
+sudo dnf install bat        # Fedora
+```
+
+### Manual Image Preview Examples
+
+#### Kitty Terminal
+
+```bash
+fd -e jpg -e png | fzf --preview '
+  kitten icat --clear --transfer-mode=memory \
+    --stdin=no --place="${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}@0x0" {}'
+```
+
+#### Sixel with Chafa
+
+```bash
+fd -e jpg -e png | fzf --preview '
+  chafa -s "${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}" {}'
+```
+
+#### iTerm2
+
+```bash
+fd -e jpg -e png | fzf --preview '
+  imgcat -W "$FZF_PREVIEW_COLUMNS" -H "$FZF_PREVIEW_LINES" {}'
+```
+
+### Preview Window Variables
+
+fzf provides special environment variables in the preview command:
+
+| Variable | Description |
+| :--- | :--- |
+| `FZF_PREVIEW_COLUMNS` | Width of preview window in columns |
+| `FZF_PREVIEW_LINES` | Height of preview window in lines |
+| `FZF_PREVIEW_TOP` | Top position of preview window |
+| `FZF_PREVIEW_LEFT` | Left position of preview window |
+
+These are essential for properly sizing images:
+
+```bash
+fzf --preview '
+  # Calculate dimensions
+  dim=${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}
+  
+  # Use with image preview
+  chafa -s "$dim" {}'
+```
+
+## Dynamic Preview
+
+You can dynamically change the preview content based on events:
+
+```bash
+# Change preview based on selection
+git ls-files | fzf \
+  --preview 'bat --style=numbers --color=always {}' \
+  --bind 'focus:transform-preview-label:echo " 📄 {}"' \
+  --bind 'focus:transform-header:file --brief {}'
+
+# Toggle between different preview modes
+fzf --preview 'bat --color=always {}' \
+    --bind 'ctrl-/:toggle-preview' \
+    --bind 'ctrl-p:change-preview(cat {})' \
+    --bind 'ctrl-b:change-preview(bat --color=always {})'
+```
+
+## Complete Example
+
+Here's a complete file browser with preview:
+
+```bash
+fd --type f --strip-cwd-prefix | fzf \
+  --height 60% \
+  --layout reverse \
+  --border rounded \
+  --preview 'bat --style=numbers --color=always --line-range :500 {}' \
+  --preview-window right,60%,border-rounded \
+  --bind 'focus:transform-preview-label:echo " Preview: {}"' \
+  --bind 'ctrl-/:change-preview-window(down|hidden|)' \
+  --bind 'ctrl-p:toggle-preview' \
+  --color 'preview-bg:#223344,preview-border:#778899'
+```
+
+## Advanced: Context-Aware Preview
+
+Create different preview behaviors based on file types:
+
+```bash
+fzf --preview '
+  if [[ -d {} ]]; then
+    # Directory: show tree
+    tree -C {} | head -200
+  elif [[ $(file --mime-type -b {}) =~ ^image/ ]]; then
+    # Image: use fzf-preview.sh
+    fzf-preview.sh {}
+  elif [[ $(file --mime-type -b {}) =~ ^text/ ]]; then
+    # Text file: use bat
+    bat --style=numbers --color=always {}
+  else
+    # Unknown: show file info
+    file {} && stat {}
+  fi'
+```
+
+## Performance Tips
+
+1. **Limit preview output** to avoid slowdowns:
+   ```bash
+   fzf --preview 'bat --line-range :500 {}'
+   fzf --preview 'head -n 100 {}'
+   ```
+
+2. **Use preview for file inputs only**:
+   ```bash
+   # Good: specific file search with preview
+   fd --type f | fzf --preview 'bat --color=always {}'
+   
+   # Bad: generic input with file preview
+   history | fzf --preview 'bat {}' # Won't work!
+   ```
+
+3. **Cache expensive operations**:
+   ```bash
+   fzf --preview 'test -f /tmp/preview-{} || generate-preview {} > /tmp/preview-{}; cat /tmp/preview-{}'
+   ```
+
+## See Also
+
+- [Environment Variables](/customization/environment-variables) - Configure preview settings via `FZF_CTRL_T_OPTS`
+- [Colors and Themes](/customization/colors-themes) - Customize preview window colors

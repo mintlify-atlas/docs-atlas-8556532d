@@ -1,0 +1,216 @@
+---
+title: Basic Usage
+description: Learn the fundamental usage patterns of fzf including STDIN pipe, file traversal, and command substitution
+---
+
+## Overview
+
+fzf is a general-purpose command-line fuzzy finder that reads a list from STDIN, allows interactive selection, and writes the result to STDOUT.
+
+## Reading from STDIN
+
+The most basic usage pattern pipes a list of items to fzf:
+
+```bash
+find * -type f | fzf > selected
+```
+
+This command:
+1. `find` generates a list of files
+2. `fzf` launches the interactive finder
+3. Selected item is written to the `selected` file
+
+### Example: Process Selection
+
+```bash
+# 1. ps:   Feed the list of processes to fzf
+# 2. fzf:  Interactively select a process using fuzzy matching
+# 3. awk:  Extract the PID from the selected line
+# 4. kill: Terminate the process
+ps -ef | fzf | awk '{print $2}' | xargs kill -9
+```
+
+<Note>
+fzf acts as an interactive Unix filter - it's designed to work seamlessly with other command-line tools through pipes.
+</Note>
+
+## File Traversal Without STDIN
+
+When fzf runs without STDIN input, it automatically traverses the file system under the current directory:
+
+```bash
+vim $(fzf)
+```
+
+This will:
+- List all files in the current directory tree
+- Let you select a file interactively
+- Open the selected file in Vim
+
+<Warning>
+A more robust solution uses `xargs` to handle special characters:
+
+```bash
+fzf --print0 | xargs -0 -o vim
+```
+
+This prevents issues with filenames containing spaces or special characters.
+</Warning>
+
+### Customizing Default Behavior
+
+You can override the default file traversal behavior in two ways:
+
+<Tabs>
+  <Tab title="Using FZF_DEFAULT_COMMAND">
+    Set the `FZF_DEFAULT_COMMAND` environment variable to specify a custom command:
+
+    ```bash
+    export FZF_DEFAULT_COMMAND='fd --type f'
+    ```
+
+    Now running `fzf` without STDIN will use `fd` to generate the file list.
+  </Tab>
+  
+  <Tab title="Using Walker Options">
+    Configure walker options in `FZF_DEFAULT_OPTS`:
+
+    ```bash
+    export FZF_DEFAULT_OPTS='--walker file,dir,follow,hidden --walker-skip .git,node_modules'
+    ```
+  </Tab>
+</Tabs>
+
+## Command Substitution
+
+Command substitution with `$()` is the most common way to use fzf output:
+
+```bash
+vim $(fzf)
+```
+
+### Limitations of Command Substitution
+
+While simple, command substitution has several drawbacks:
+
+- Vim opens an empty file when you press CTRL-C to exit fzf
+- Vim opens an empty file when you press ENTER on an empty result
+- Cannot handle multiple selections with whitespaces properly
+
+<Tip>
+Consider using the `become()` action for a more robust solution:
+
+```bash
+fzf --bind 'enter:become(vim {})'
+```
+
+This turns fzf into the vim process, avoiding the issues above.
+</Tip>
+
+## Using become() for Process Transformation
+
+The `become()` action transforms fzf into a different process:
+
+```bash
+fzf --bind 'enter:become(vim {})'
+```
+
+### Advantages Over Command Substitution
+
+<CardGroup cols={2}>
+  <Card title="No Empty Files" icon="circle-xmark">
+    Vim won't open when you terminate fzf with CTRL-C or press ENTER on empty results
+  </Card>
+  
+  <Card title="Multiple Selections" icon="check-double">
+    Handles multiple selections even with whitespaces:
+    
+    ```bash
+    fzf --multi --bind 'enter:become(vim {+})'
+    ```
+  </Card>
+  
+  <Card title="Multiple Bindings" icon="keyboard">
+    Set up different actions for different keys:
+    
+    ```bash
+    fzf --bind 'enter:become(vim {}),ctrl-e:become(emacs {})'
+    ```
+  </Card>
+  
+  <Card title="Field Expressions" icon="table-cells">
+    Build commands using field indices:
+    
+    ```bash
+    git grep --line-number . | 
+      fzf --delimiter : --nth 3.. --bind 'enter:become(vim {1} +{2})'
+    ```
+  </Card>
+</CardGroup>
+
+## Practical Examples
+
+### Respecting .gitignore
+
+Use fd, ripgrep, or ag to traverse files while respecting `.gitignore`:
+
+```bash
+# Feed fd output into fzf
+fd --type f --strip-cwd-prefix | fzf
+
+# Set fd as the default source
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+fzf  # Now uses fd automatically
+
+# Include hidden files and follow symlinks
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+```
+
+### Opening Files with Preview
+
+```bash
+fzf --preview 'bat --color=always {}' \
+    --bind 'enter:become(vim {})'
+```
+
+### Searching Command History
+
+When shell integration is set up, CTRL-R searches command history. You can also do it manually:
+
+```bash
+history | fzf | cut -c 8- | sh
+```
+
+<Warning>
+**Important**: fzf is a general-purpose text filter, not specifically a file finder. Avoid adding file-specific options like `--preview 'bat {}'` to `$FZF_DEFAULT_OPTS` as it will break non-file use cases:
+
+```bash
+# *** DO NOT DO THIS! ***
+export FZF_DEFAULT_OPTS='--preview "bat {}"'
+
+# bat won't work with these:
+ps -ef | fzf
+seq 100 | fzf
+history | fzf
+```
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search Syntax" icon="magnifying-glass" href="/usage/search-syntax">
+    Learn about fuzzy matching, exact match, prefix/suffix search, and more
+  </Card>
+  
+  <Card title="Display Modes" icon="window-restore" href="/usage/display-modes">
+    Explore fullscreen, --height, and --tmux display modes
+  </Card>
+  
+  <Card title="Key Bindings" icon="keyboard" href="/usage/key-bindings">
+    Discover default key bindings and custom binding configuration
+  </Card>
+  
+  <Card title="Shell Integration" icon="terminal" href="/shell/setup">
+    Set up CTRL-T, CTRL-R, and ALT-C bindings in your shell
+  </Card>
+</CardGroup>

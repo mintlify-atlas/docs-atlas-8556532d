@@ -1,0 +1,173 @@
+---
+title: Introduction
+description: A blazingly fast general-purpose command-line fuzzy finder that helps you filter and search through any kind of list
+---
+
+<img
+  src="https://raw.githubusercontent.com/junegunn/i/master/fzf-color.png"
+  alt="fzf - a command-line fuzzy finder"
+/>
+
+## What is fzf?
+
+fzf is a general-purpose command-line fuzzy finder. It's an interactive filter program for any kind of list: files, command history, processes, hostnames, bookmarks, git commits, and more. It implements a "fuzzy" matching algorithm, so you can quickly type in patterns with omitted characters and still get the results you want.
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Get started with fzf on macOS, Linux, Windows, and more
+  </Card>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Learn the basics and start using fzf in 5 minutes
+  </Card>
+  <Card
+    title="Advanced Usage"
+    icon="wand-magic-sparkles"
+    href="https://github.com/junegunn/fzf/blob/master/ADVANCED.md"
+  >
+    Explore advanced features and customization options
+  </Card>
+  <Card
+    title="Examples"
+    icon="code"
+    href="https://github.com/junegunn/fzf/wiki/examples"
+  >
+    Browse community-contributed examples and use cases
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Portable" icon="box">
+    Distributed as a single binary for easy installation with no dependencies
+  </Card>
+  <Card title="Fast" icon="bolt">
+    Optimized to process millions of items instantly with efficient algorithms
+  </Card>
+  <Card title="Versatile" icon="sliders">
+    Fully customizable through an event-action binding mechanism
+  </Card>
+  <Card title="All-inclusive" icon="puzzle-piece">
+    Comes with integrations for Bash, Zsh, Fish, Vim, and Neovim
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+fzf excels at making command-line operations more interactive and efficient:
+
+<Tabs>
+  <Tab title="File Navigation">
+    Quickly find and open files in your project:
+    ```bash
+    vim $(fzf)
+    ```
+    Or use the integrated key binding:
+    ```bash
+    # Press CTRL-T to paste selected files onto command-line
+    vim <CTRL-T>
+    ```
+  </Tab>
+  <Tab title="Command History">
+    Search through your command history:
+    ```bash
+    # Press CTRL-R to search command history
+    <CTRL-R>
+    ```
+    fzf makes finding previous commands effortless with fuzzy matching.
+  </Tab>
+  <Tab title="Process Management">
+    Interactively select processes:
+    ```bash
+    kill -9 $(ps -ef | fzf | awk '{print $2}')
+    ```
+  </Tab>
+  <Tab title="Git Integration">
+    Browse and search git commits:
+    ```bash
+    git log --oneline | fzf --preview 'git show --color=always {1}'
+    ```
+  </Tab>
+</Tabs>
+
+## Quick Example
+
+Here's how fzf transforms a simple file search:
+
+<CodeGroup>
+```bash Traditional
+# Find a file manually
+ls -la | grep myfile
+find . -name "*myfile*"
+```
+
+```bash With fzf
+# Interactive fuzzy search
+fzf
+
+# Or pipe any list into fzf
+find * -type f | fzf
+```
+</CodeGroup>
+
+<Note>
+  fzf starts in fullscreen mode by default, but you can use `--height 40%` for inline mode or `--tmux` for tmux popup mode.
+</Note>
+
+## Display Modes
+
+fzf offers flexible display options to fit your workflow:
+
+### Fullscreen Mode
+The default mode that takes over your entire terminal for maximum visibility.
+
+### Height Mode
+```bash
+fzf --height 40% --layout reverse --border
+```
+Starts below the cursor with a specified height - perfect for inline searches.
+
+### Tmux Mode
+```bash
+fzf --tmux center,80%
+```
+Opens in a tmux popup window when you're using tmux.
+
+<Tip>
+  Set your preferred mode in `$FZF_DEFAULT_OPTS` to apply it by default:
+  ```bash
+  export FZF_DEFAULT_OPTS='--height 40% --tmux bottom,40% --layout reverse --border top'
+  ```
+</Tip>
+
+## Community & Support
+
+- **GitHub**: [junegunn/fzf](https://github.com/junegunn/fzf)
+- **License**: MIT License
+- **Author**: Junegunn Choi
+- **Version**: 0.68.0
+
+<CardGroup cols={2}>
+  <Card
+    title="GitHub Repository"
+    icon="github"
+    href="https://github.com/junegunn/fzf"
+  >
+    Star the project and contribute on GitHub
+  </Card>
+  <Card
+    title="Sponsor the Project"
+    icon="heart"
+    href="https://github.com/sponsors/junegunn"
+  >
+    Support ongoing development of fzf
+  </Card>
+</CardGroup>

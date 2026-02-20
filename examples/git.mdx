@@ -1,0 +1,195 @@
+---
+title: Git Integration
+description: Use fzf to interactively select Git objects like files, branches, and commits
+---
+
+fzf provides powerful key bindings for working with Git objects. These examples show how to build interactive Git workflows.
+
+<Note>
+For a complete set of Git key bindings, check out [fzf-git.sh](https://github.com/junegunn/fzf-git.sh) which provides pre-configured bindings for files, branches, commits, tags, and more.
+</Note>
+
+## Git Status Files
+
+Interactively select files from `git status` and insert them into your command line.
+
+**Key binding:** `CTRL-G` `CTRL-F`
+
+```bash
+git status --short |
+  fzf --multi \
+      --preview 'git diff --color=always {2}' \
+      --preview-window 'right,60%' \
+      --bind 'enter:become(git add {+2})'
+```
+
+**Features:**
+
+- `--multi` allows selecting multiple files with `TAB`
+- Preview shows the diff for each file
+- `{+2}` extracts the filename (second column) from all selected items
+- Press Enter to stage the selected files
+
+## Branch Selection
+
+Interactively select and checkout Git branches.
+
+**Key binding:** `CTRL-G` `CTRL-B`
+
+```bash
+git branch --all --format='%(refname:short)' |
+  fzf --preview 'git log --oneline --graph --date=short --color=always --pretty="format:%C(auto)%cd %h%d %s" {}' \
+      --preview-window 'right,70%' \
+      --bind 'enter:become(git checkout {})'
+```
+
+**Features:**
+
+- Lists all branches including remote branches
+- Preview shows the branch's commit history
+- Press Enter to checkout the selected branch
+
+## Commit Selection
+
+Interactively browse and select Git commits.
+
+**Key binding:** `CTRL-G` `CTRL-H`
+
+```bash
+git log --oneline --graph --color=always |
+  fzf --ansi \
+      --preview 'echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs git show --color=always' \
+      --preview-window 'right,60%' \
+      --bind 'enter:become(git show {1})'
+```
+
+**Features:**
+
+- `--ansi` preserves Git's colored output
+- Preview shows the full commit diff
+- `{1}` extracts the commit hash from the first column
+
+## Interactive Git Diff
+
+Compare commits interactively by selecting a base and target commit.
+
+```bash
+#!/usr/bin/env bash
+
+# Select two commits to compare
+COMMITS=$(git log --oneline --color=always |
+  fzf --ansi --multi --no-sort \
+      --preview 'git show --color=always {1}' \
+      --preview-window 'right,60%')
+
+if [[ -n "$COMMITS" ]]; then
+  COMMIT1=$(echo "$COMMITS" | sed -n 1p | awk '{print $1}')
+  COMMIT2=$(echo "$COMMITS" | sed -n 2p | awk '{print $1}')
+  
+  if [[ -n "$COMMIT2" ]]; then
+    git diff "$COMMIT1" "$COMMIT2"
+  else
+    git show "$COMMIT1"
+  fi
+fi
+```
+
+## Git Log Browser
+
+Browse Git history with multiple actions.
+
+```bash
+git log --oneline --graph --color=always --all |
+  fzf --ansi --no-sort --reverse \
+      --preview 'echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs git show --color=always' \
+      --preview-window 'right,60%' \
+      --bind 'enter:become(git show {1})' \
+      --bind 'ctrl-d:preview-half-page-down' \
+      --bind 'ctrl-u:preview-half-page-up' \
+      --bind 'ctrl-y:execute-silent(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | pbcopy)' \
+      --header 'ENTER: show commit | CTRL-Y: copy hash | CTRL-D/U: scroll preview'
+```
+
+**Key bindings:**
+
+- `ENTER`: Show the full commit
+- `CTRL-Y`: Copy commit hash to clipboard (macOS)
+- `CTRL-D` / `CTRL-U`: Scroll preview window
+
+## Git Stash Browser
+
+Interactively manage Git stashes.
+
+```bash
+git stash list |
+  fzf --preview 'git stash show -p {1}' \
+      --preview-window 'right,60%' \
+      --bind 'enter:become(git stash pop {1})' \
+      --bind 'ctrl-d:execute(git stash drop {1})+reload(git stash list)' \
+      --bind 'ctrl-a:execute(git stash apply {1})' \
+      --header 'ENTER: pop | CTRL-A: apply | CTRL-D: drop'
+```
+
+**Key bindings:**
+
+- `ENTER`: Pop the selected stash
+- `CTRL-A`: Apply the selected stash without removing it
+- `CTRL-D`: Drop the selected stash and reload the list
+
+## Building Custom Git Commands
+
+<Steps>
+
+<Step title="Define the Git operation">
+Decide what Git objects you want to work with (files, branches, commits, tags, etc.).
+</Step>
+
+<Step title="Create the list command">
+Use Git commands to generate the list of items:
+
+```bash
+# Files
+git status --short
+
+# Branches
+git branch --all --format='%(refname:short)'
+
+# Commits
+git log --oneline --graph --color=always
+
+# Tags
+git tag --list
+```
+</Step>
+
+<Step title="Add preview">
+Show relevant information in the preview window:
+
+```bash
+--preview 'git show --color=always {}'
+--preview 'git diff --color=always {2}'
+--preview 'git log --oneline --graph {}'
+```
+</Step>
+
+<Step title="Bind actions">
+Use `become`, `execute`, or `execute-silent` to perform Git operations:
+
+```bash
+--bind 'enter:become(git checkout {})'
+--bind 'ctrl-d:execute(git branch -D {})'
+--bind 'ctrl-y:execute-silent(echo {} | pbcopy)'
+```
+</Step>
+
+</Steps>
+
+<Tip>
+The [fzf-git.sh](https://github.com/junegunn/fzf-git.sh) project provides production-ready key bindings for common Git operations. Install it to get:
+- `CTRL-G CTRL-F`: Files
+- `CTRL-G CTRL-B`: Branches  
+- `CTRL-G CTRL-T`: Tags
+- `CTRL-G CTRL-H`: Commit hashes
+- `CTRL-G CTRL-R`: Remotes
+- And more!
+</Tip>

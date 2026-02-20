@@ -1,0 +1,457 @@
+---
+title: Zsh Configuration
+description: Zsh-specific shell integration configuration and examples
+---
+
+This guide covers zsh-specific configuration for fzf shell integration, including key bindings, fuzzy completion, and advanced customization.
+
+## Setup
+
+Add this line to your `~/.zshrc`:
+
+```zsh
+# Set up fzf key bindings and fuzzy completion
+source <(fzf --zsh)
+```
+
+<Note>
+Requires fzf 0.48.0 or later. For older versions, see [Manual Setup](#manual-setup).
+</Note>
+
+## Manual Setup
+
+For finer control or older fzf versions, source the scripts manually:
+
+```zsh
+# Source key bindings
+source /usr/share/doc/fzf/examples/key-bindings.zsh
+
+# Source fuzzy completion
+source /usr/share/doc/fzf/examples/completion.zsh
+```
+
+<Tip>
+Use your package manager to find exact file locations (e.g., `apt show fzf`).
+</Tip>
+
+## Key Bindings
+
+### CTRL-T: File Selection
+
+Paste selected files onto the command-line:
+
+```zsh
+vim <CTRL-T>
+```
+
+**Configuration:**
+
+```zsh
+# Custom file listing command
+export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
+
+# Custom fzf options
+export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+```
+
+### CTRL-R: Command History
+
+Search and paste commands from history:
+
+```zsh
+<CTRL-R>
+```
+
+**Configuration:**
+
+```zsh
+# Copy to clipboard with CTRL-Y
+export FZF_CTRL_R_OPTS="
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+  --color header:italic
+  --header 'Press CTRL-Y to copy command into clipboard'"
+```
+
+**Zsh-specific features:**
+- Multi-line command support with Perl for better formatting
+- Fallback to awk for systems without Perl
+- Integration with zsh's history array via `zsh/parameter` module
+
+### ALT-C: Directory Navigation
+
+Change to selected directory:
+
+```zsh
+<ALT-C>
+```
+
+**Configuration:**
+
+```zsh
+# Custom directory listing
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+
+# Show directory tree in preview
+export FZF_ALT_C_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'tree -C {}'"
+```
+
+### Disabling Key Bindings
+
+Disable specific bindings by setting their command variable to empty:
+
+```zsh
+# Disable CTRL-R and ALT-C
+FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source <(fzf --zsh)
+```
+
+### Widget Implementation
+
+Zsh key bindings use custom widgets:
+
+```zsh
+# Define widgets
+zle -N fzf-file-widget
+zle -N fzf-history-widget  
+zle -N fzf-cd-widget
+
+# Bind to keys
+bindkey -M emacs '^T' fzf-file-widget
+bindkey -M vicmd '^T' fzf-file-widget
+bindkey -M viins '^T' fzf-file-widget
+
+bindkey -M emacs '^R' fzf-history-widget
+bindkey -M vicmd '^R' fzf-history-widget
+bindkey -M viins '^R' fzf-history-widget
+
+bindkey -M emacs '\ec' fzf-cd-widget
+bindkey -M vicmd '\ec' fzf-cd-widget
+bindkey -M viins '\ec' fzf-cd-widget
+```
+
+## Fuzzy Completion
+
+### Trigger Sequence
+
+By default, fuzzy completion triggers with `**<TAB>`:
+
+```zsh
+vim **<TAB>
+cd ~/projects/**<TAB>
+```
+
+Customize the trigger:
+
+```zsh
+export FZF_COMPLETION_TRIGGER='~~'
+```
+
+### TAB Key Binding
+
+The completion widget is bound to TAB:
+
+```zsh
+zle -N fzf-completion
+bindkey '^I' fzf-completion
+```
+
+### Custom Completion Options
+
+```zsh
+# General completion options
+export FZF_COMPLETION_OPTS='--border --info=inline'
+
+# Path completion (e.g., vim **<TAB>)
+export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+
+# Directory completion (e.g., cd **<TAB>)
+export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+```
+
+### Custom Completion Functions
+
+Use `fd` instead of the default file walker:
+
+```zsh
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+```
+
+### Per-Command Customization
+
+Customize fzf behavior for specific commands:
+
+```zsh
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf --preview 'tree -C {} | head -200'   "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$'{}"         "$@" ;;
+    ssh)          fzf --preview 'dig {}'                   "$@" ;;
+    *)            fzf --preview 'bat -n --color=always {}' "$@" ;;
+  esac
+}
+```
+
+## Custom Completion Examples
+
+### Git Operations
+
+```zsh
+_fzf_complete_git() {
+  local -a tokens
+  tokens=(${(z)1})
+  
+  case "${tokens[-1]}" in
+    checkout|switch)
+      _fzf_complete --reverse --prompt="branch> " -- "$@" < <(
+        git branch --all --format='%(refname:short)'
+      )
+      ;;
+    add)
+      _fzf_complete --multi --reverse -- "$@" < <(
+        git status --short | awk '{print $2}'
+      )
+      ;;
+    log|show|diff)
+      _fzf_complete --reverse --preview='git show --color=always {1}' -- "$@" < <(
+        git log --oneline
+      )
+      ;;
+  esac
+}
+```
+
+### Docker Management
+
+```zsh
+_fzf_complete_docker() {
+  local tokens cmd
+  tokens=(${(z)1})
+  cmd=${tokens[2]}
+  
+  case "$cmd" in
+    start|stop|restart|rm)
+      _fzf_complete --multi --reverse --prompt="container> " -- "$@" < <(
+        docker ps -a --format '{{.Names}}'
+      )
+      ;;
+    exec)
+      _fzf_complete --reverse --prompt="container> " -- "$@" < <(
+        docker ps --format '{{.Names}}'
+      )
+      ;;
+    rmi)
+      _fzf_complete --multi --reverse --prompt="image> " -- "$@" < <(
+        docker images --format '{{.Repository}}:{{.Tag}}'
+      )
+      ;;
+  esac
+}
+```
+
+### Process Management
+
+```zsh
+_fzf_complete_kill() {
+  local transformer
+  transformer='
+    if [[ $FZF_KEY =~ ctrl|alt|shift ]] && [[ -n $FZF_NTH ]]; then
+      nths=( ${FZF_NTH//,/ } )
+      new_nths=()
+      found=0
+      for nth in ${nths[@]}; do
+        if [[ $nth = $FZF_CLICK_HEADER_NTH ]]; then
+          found=1
+        else
+          new_nths+=($nth)
+        fi
+      done
+      [[ $found = 0 ]] && new_nths+=($FZF_CLICK_HEADER_NTH)
+      new_nths=${new_nths[*]}
+      new_nths=${new_nths// /,}
+      echo "change-nth($new_nths)+change-prompt($new_nths> )"
+    else
+      if [[ $FZF_NTH = $FZF_CLICK_HEADER_NTH ]]; then
+        echo "change-nth()+change-prompt(> )"
+      else
+        echo "change-nth($FZF_CLICK_HEADER_NTH)+change-prompt($FZF_CLICK_HEADER_WORD> )"
+      fi
+    fi
+  '
+  _fzf_complete -m --header-lines=1 --no-preview --wrap --color fg:dim,nth:regular \
+    --bind "click-header:transform:$transformer" -- "$@" < <(
+    command ps -eo user,pid,ppid,start,time,command 2> /dev/null ||
+      command ps -eo user,pid,ppid,time,args 2> /dev/null
+  )
+}
+
+_fzf_complete_kill_post() {
+  awk '{print $2}'
+}
+```
+
+## Zsh Completion System Integration
+
+fzf completion works alongside zsh's native completion system:
+
+```zsh
+# Preserve fallback to default completion
+[ -z "$fzf_default_completion" ] && {
+  binding=$(bindkey '^I')
+  [[ $binding =~ 'undefined-key' ]] || fzf_default_completion=$binding[(s: :w)2]
+  unset binding
+}
+```
+
+When fuzzy completion doesn't match, it falls back to zsh's default:
+
+```zsh
+fzf-completion() {
+  # ... fuzzy completion logic ...
+  
+  # Fall back to default completion
+  else
+    zle ${fzf_default_completion:-expand-or-complete}
+  fi
+}
+```
+
+## Advanced Configuration
+
+### History Integration
+
+Zsh uses its history module for better multi-line support:
+
+```zsh
+# History widget uses zsh/parameter module
+if zmodload -F zsh/parameter p:{commands,history} 2>/dev/null && (( ${+commands[perl]} )); then
+  # Use Perl for multi-line formatting
+  selected="$(printf '%s\t%s\000' "${(kv)history[@]}" |
+    perl -0 -ne 'if (!$seen{(/^\s*[0-9]+\**\t(.*)/s, $1)}++) { s/\n/\n\t/g; print; }' |
+    FZF_DEFAULT_OPTS=$(__fzf_defaults "" "-n2..,.. --scheme=history --bind=ctrl-r:toggle-sort,alt-r:toggle-raw --wrap-sign '\t↳ ' --highlight-line --multi ${FZF_CTRL_R_OPTS-} --query=${(qqq)LBUFFER} --read0") \
+    FZF_DEFAULT_OPTS_FILE='' $(__fzfcmd))"
+fi
+```
+
+### Respecting .gitignore
+
+Use `fd` to respect `.gitignore` files:
+
+```zsh
+# Use fd for CTRL-T
+export FZF_CTRL_T_COMMAND='fd --type f --strip-cwd-prefix'
+
+# Include hidden files but exclude .git
+export FZF_CTRL_T_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+```
+
+### Integration with tmux
+
+Use fzf in tmux popups:
+
+```zsh
+# Open fzf in tmux popup
+export FZF_TMUX_OPTS='-p 80%,60%'
+
+# Or use traditional split
+export FZF_TMUX=1
+export FZF_TMUX_HEIGHT='40%'
+```
+
+### Option Preservation
+
+Zsh integration preserves your shell options:
+
+```zsh
+# Options are saved at the start
+if 'zmodload' 'zsh/parameter' 2>'/dev/null' && (( ${+options} )); then
+  __fzf_completion_options="options=(${(j: :)${(kv)options[@]}})"
+fi
+
+# ... fzf completion code ...
+
+# Options are restored at the end
+} always {
+  eval $__fzf_completion_options
+  'unset' '__fzf_completion_options'
+}
+```
+
+## Complete Configuration Example
+
+```zsh
+# ~/.zshrc
+
+# fzf setup
+source <(fzf --zsh)
+
+# Key binding options
+export FZF_CTRL_T_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+export FZF_CTRL_R_OPTS="
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+  --color header:italic
+  --header 'Press CTRL-Y to copy command into clipboard'"
+
+export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_ALT_C_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'tree -C {}'"
+
+# Completion options
+export FZF_COMPLETION_TRIGGER='**'
+export FZF_COMPLETION_OPTS='--border --info=inline'
+export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+
+# Custom completion functions
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf --preview 'tree -C {} | head -200'   "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$'{}"         "$@" ;;
+    ssh)          fzf --preview 'dig {}'                   "$@" ;;
+    *)            fzf --preview 'bat -n --color=always {}' "$@" ;;
+  esac
+}
+
+# Display options
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Key Bindings" icon="keyboard" href="/shell/key-bindings">
+    Learn more about CTRL-T, CTRL-R, and ALT-C
+  </Card>
+  <Card title="Fuzzy Completion" icon="sparkles" href="/shell/fuzzy-completion">
+    Detailed fuzzy completion documentation
+  </Card>
+</CardGroup>

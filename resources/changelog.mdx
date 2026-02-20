@@ -1,0 +1,421 @@
+---
+title: Changelog
+description: Release history and notable changes in fzf
+---
+
+# Changelog
+
+This page highlights recent notable changes in fzf. For the complete changelog, see [CHANGELOG.md on GitHub](https://github.com/junegunn/fzf/blob/master/CHANGELOG.md).
+
+## Latest Release
+
+### 0.68.0 (Current)
+
+This release focuses on text wrapping improvements and fish shell enhancements.
+
+**Word Wrapping**
+- Implemented word wrapping in the list section with `--wrap=word` (or `--wrap-word`)
+- Added word wrapping in the preview window with `wrap-word` flag for `--preview-window`
+- New actions: `toggle-wrap-word` and `toggle-preview-wrap-word`
+- Default binding changed from `toggle-wrap` to `toggle-wrap-word` for `ctrl-/` and `alt-/`
+
+```bash
+# Word wrapping in list
+fzf --wrap=word
+
+# Word wrapping in preview
+fzf --preview 'bat --style=plain --color=always {}' \
+    --preview-window wrap-word \
+    --bind space:toggle-preview-wrap-word
+```
+
+**Enhanced Underline Support**
+- Added underline style variants: `underline-double`, `underline-curly`, `underline-dotted`, `underline-dashed`
+- Support for SGR 58/59 underline colors
+
+```bash
+fzf --color 'fg:underline-curly,current-fg:underline-dashed'
+
+# ANSI underline styles
+printf '\e[4:3;58;2;255;0;0mRed curly underline\e[0m\n' | fzf --ansi
+```
+
+**Fish Shell Improvements**
+- Improved command history (CTRL-R) with syntax highlighting on fish 4.3.3+
+- Syntax-highlighted preview window for long/multi-line commands
+- ALT-ENTER to reformat and insert selected commands
+- Better handling of bulk deletion (SHIFT-DELETE)
+- Added fish completion support
+
+**New Features**
+- `--preview-wrap-sign` to customize wrap indicator for preview window
+- `alt-gutter` color option
+- `$FZF_WRAP` environment variable exported to child processes
+- `change-nth` action for dynamically changing `--nth` option
+
+**Bug Fixes**
+- Fixed `--preview-window follow` with wrapping
+- Fixed symlinks to directories being returned as files
+- Multiple display and rendering fixes
+- Improved signal handling
+
+---
+
+## Recent Notable Releases
+
+### 0.67.0
+
+**Freeze Columns Feature**
+- `--freeze-left=N` keeps leftmost N columns always visible
+- `--freeze-right=N` keeps rightmost N columns always visible
+
+```bash
+# Keep filename column fixed when scrolling
+git grep --line-number --color=always -- '' |
+    fzf --ansi --delimiter : --freeze-left 1
+
+# Keep both left and right visible
+fd | fzf --freeze-left 1 --freeze-right 1 --delimiter /
+```
+
+**UI Improvements**
+- `--info=inline` now displays spinner (load indicator)
+
+### 0.66.0
+
+<Note>
+This release introduces the groundbreaking "raw" mode feature.
+</Note>
+
+**Raw Mode**
+
+Raw mode shows non-matching items in their original positions but dimmed, allowing you to see context around matches.
+
+```bash
+# Toggle raw mode with ALT-R
+tree | fzf --reverse --bind alt-r:toggle-raw
+```
+
+Key features:
+- New options: `--raw`, `--gutter`, `--gutter-raw`
+- New actions: `toggle-raw`, `enable-raw`, `disable-raw`, `up-match`, `down-match`, `best`
+- New color: `nomatch` for non-matching items
+- New environment variables: `$FZF_RAW`, `$FZF_DIRECTION`, `$FZF_SOCK`
+- CTRL-N/CTRL-P now bound to `down-match`/`up-match` for easier navigation
+
+**Style Updates**
+- Narrower gutter column using left-half block character (`▌`)
+- Markers no longer use background colors
+- Updated `--color base16` theme for better compatibility
+
+**Unix Domain Sockets**
+```bash
+fzf --listen /tmp/fzf.sock --no-tmux
+curl --unix-socket /tmp/fzf.sock http -d up
+```
+
+**Breaking Changes**
+- Built with Go 1.23 - dropped support for some old OS versions
+- Gutter hiding now requires `--gutter ' '` instead of `--color gutter:-1`
+- Default style attributes no longer need explicit `regular` to unset
+
+### 0.65.0
+
+**Footer Section**
+- Added footer with `--footer` option
+- New `click-footer` event for interactive footers
+- Footer borders, labels, and colors customization
+
+```bash
+fzf --footer 'Press CTRL-E to edit' --footer-border line
+```
+
+**Advanced Actions**
+- `trigger(...)` action to trigger events bound to other keys
+- `{*}` and `{*n}` placeholder flags for all matched items
+- Asynchronous transform actions with `bg-` prefix
+- `bg-cancel` action to cancel background transforms
+
+**Visual Enhancements**
+- `line` border style for cleaner separators
+- Full-line background color support in list section
+
+### 0.64.0
+
+**Multi-Selection Improvements**
+- Added `multi` event triggered when multi-selection changes
+- Renamed `clear-selection` to `clear-multi` (old name still works)
+- Better handling of selections with `exclude` and `change-nth`
+
+```bash
+fzf --multi --bind 'ctrl-a:select-all,ctrl-d:deselect-all' \
+    --bind 'multi:transform-footer:(( FZF_SELECT_COUNT )) && echo "Selected $FZF_SELECT_COUNT"'
+```
+
+**Unicode Normalization**
+- Halfwidth and fullwidth characters now normalize to ASCII for matching
+```bash
+echo ＡＢＣ | fzf -q abc  # Now matches!
+```
+
+### 0.63.0
+
+**Footer Feature**
+- Added footer section with extensive customization options
+- Options: `--footer`, `--footer-border`, `--footer-label`, `--footer-label-pos`
+- Actions: `change-footer`, `transform-footer`, `bg-transform-footer`
+- Colors: `footer`, `footer-bg`, `footer-border`, `footer-label`
+
+**Enhanced Features**
+- `{*}` placeholder for all matched items
+- Asynchronous background transform actions
+- Full-line background colors in list section
+
+### 0.62.0
+
+**Color Configuration**
+- Relaxed `--color` syntax to allow whitespace-separated entries
+
+```bash
+fzf --color='
+  fg:#616161 fg+:#616161
+  bg:#ffffff bg+:#e9e9e9
+  hl:#719872 hl+:#719899
+'
+```
+
+**Striped Rows**
+- Added `alt-bg` color for visually separating rows
+```bash
+fzf --color bg:237,alt-bg:238,current-bg:236 --highlight-line
+```
+
+### 0.61.0
+
+**Ghost Text**
+- `--ghost=TEXT` displays placeholder text when input is empty
+- `change-ghost` and `transform-ghost` actions for dynamic updates
+
+```bash
+fzf --ghost "Type to search"
+```
+
+**Dynamic Customization**
+- `change-pointer` and `transform-pointer` actions
+- `r` flag for placeholder expressions (raw mode output)
+
+### 0.60.0
+
+**Output Control**
+- `--accept-nth` for choosing specific output fields
+
+```bash
+ps -ef | fzf --multi --header-lines 1 --accept-nth 2
+git branch | fzf --accept-nth -1  # Remove leading spaces
+```
+
+**Template Support**
+- Field expressions in curly braces for `--accept-nth` and `--with-nth`
+```bash
+echo foo,bar,baz | fzf --delimiter , --accept-nth '{1}, {3}, {2}'
+  # Output: foo, baz, bar
+```
+
+**Exclusion Actions**
+- `exclude` and `exclude-multi` for dynamically excluding items
+```bash
+seq 100 | fzf --bind 'ctrl-x:exclude'
+seq 100 | fzf --multi --bind 'ctrl-x:exclude-multi'
+```
+
+### 0.59.0
+
+**File Name Prioritization**
+- New `pathname` tiebreak option
+- `--scheme=path` automatically prioritizes file name matches
+- fzf auto-detects when input is likely files
+
+**Header Improvements**
+- `--header-lines-border` to separate header with border
+- `click-header` event with `$FZF_CLICK_HEADER_WORD` and `$FZF_CLICK_HEADER_NTH`
+- Interactive headers for changing search scope
+
+**Input Control**
+- `--no-input` option to hide input section
+- `show-input`, `hide-input`, `toggle-input` actions
+
+**Extended Query Syntax**
+- `{q:1}`, `{q:2..}` for query ranges
+- `search(...)` and `transform-search(...)` actions
+
+### 0.58.0
+
+**Style Presets**
+```bash
+fzf --style full      # Full borders and labels  
+fzf --style minimal   # Minimal interface
+fzf --style default   # Classic look
+```
+
+**Section Borders**
+- `--list-border` and `--list-label` for list section
+- `--input-border` and `--input-label` for input section  
+- `--header-border` and `--header-label` for header section
+- `--preview-border` as shorthand for preview window border
+
+**Visual Improvements**
+- Dashed lines in gaps (`--gap`)
+- `line` border style for clean separators
+- `toggle-multi-line`, `toggle-hscroll` actions
+
+---
+
+## Previous Releases
+
+### 0.55.0 - Search Syntax Enhancement
+- Exact boundary match with single quotes: `'word'`
+- Hyperlinks (OSC 8) support
+- Comments in `$FZF_DEFAULT_OPTS`
+- Default ellipsis changed to `··`
+
+### 0.54.0 - Line Wrap
+- `--wrap` option for line wrapping
+- `--wrap-sign` customization
+- `toggle-wrap` action
+- `--info-command` for custom info line
+
+### 0.53.0 - Multi-line Display
+- Display multi-line items with `--read0`
+- Native tmux integration with `--tmux`
+- `--tail=NUM` for endless streams
+- Better Windows support
+- Embedded man page (`fzf --man`)
+
+### 0.52.0 - Visual Enhancements
+- `--highlight-line` option
+- Selected line colors: `selected-fg`, `selected-bg`, `selected-hl`
+- `click-header` event
+- Better completion customization
+
+### 0.51.0 - Process Control
+- `$FZF_POS` environment variable
+- `--with-shell` for custom shell commands
+- `change-multi` action
+- Windows `become` action support
+
+---
+
+## Migration Notes
+
+<Warning>
+Major version updates may include breaking changes. Review release notes carefully before upgrading.
+</Warning>
+
+### Upgrading to 0.66.0+
+
+**Go Version Requirement**
+- Now requires Go 1.23+ for building from source
+- Some old OS versions are no longer supported
+- See [Go minimum requirements](https://go.dev/wiki/MinimumRequirements)
+
+**Gutter Changes**
+```bash
+# Old way (no longer works)
+fzf --color gutter:-1
+
+# New way
+fzf --gutter ' '
+```
+
+**Color Attributes**
+- Default attributes no longer need explicit `regular` to unset
+
+### Upgrading to 0.53.0+
+
+**Windows**
+- Git bash (mintty) now works out of the box
+- Improved native Windows support
+
+**Pointer/Marker**
+- Default changed from `>` to Unicode bar characters
+- Multi-line marker: `╻┃╹`
+
+---
+
+## Getting Updates
+
+### Stay Informed
+
+- **GitHub Releases**: https://github.com/junegunn/fzf/releases
+- **Release Highlights**: https://junegunn.github.io/fzf/
+- **Changelog**: https://github.com/junegunn/fzf/blob/master/CHANGELOG.md
+
+### Upgrade Instructions
+
+Depending on your installation method:
+
+```bash
+# Homebrew
+brew update && brew upgrade fzf
+
+# Git installation
+cd ~/.fzf && git pull && ./install
+
+# Package managers
+sudo apt update && sudo apt upgrade fzf  # Debian/Ubuntu
+sudo pacman -Syu fzf                     # Arch
+sudo dnf upgrade fzf                     # Fedora
+
+# Vim plugin
+:PlugUpdate fzf
+```
+
+<Note>
+After upgrading, restart your shell or source your shell configuration file to ensure all changes take effect.
+</Note>
+
+---
+
+## Version Support
+
+### Windows 7 Support
+<Warning>
+Windows 7 support was dropped after version 0.65.2. This was the final release supporting Windows 7.
+</Warning>
+
+Windows 7 users should:
+- Use fzf 0.65.2 or earlier
+- Consider upgrading to a supported Windows version
+
+### Old fzf Versions
+
+For shell integration:
+- fzf 0.48.0+ required for `--bash`, `--zsh`, `--fish` options
+- Older versions must source individual files from `/shell` directory
+- Location varies by installation method (check with `apt show fzf`, etc.)
+
+---
+
+## Release Philosophy
+
+fzf follows these principles for releases:
+
+- **Frequent updates**: Regular releases with new features and bug fixes
+- **Backward compatibility**: Breaking changes are rare and well-documented
+- **Performance**: Speed and efficiency are never compromised
+- **Stability**: Extensive testing before releases
+- **Community-driven**: Features often come from user feedback
+
+---
+
+## Contributing
+
+Interested in contributing to fzf?
+
+- **Report bugs**: https://github.com/junegunn/fzf/issues
+- **Suggest features**: Open a discussion or issue
+- **Submit PRs**: https://github.com/junegunn/fzf/pulls
+- **Documentation**: Help improve docs and examples
+- **Support**: Answer questions from other users
+
+See the [GitHub repository](https://github.com/junegunn/fzf) for contribution guidelines.

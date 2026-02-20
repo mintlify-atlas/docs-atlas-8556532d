@@ -1,0 +1,236 @@
+---
+title: Neovim Integration
+description: Set up fzf with Neovim and explore the fzf-lua alternative
+---
+
+fzf works seamlessly with Neovim, providing the same powerful fuzzy finding capabilities available in Vim. Additionally, Neovim users have access to fzf-lua, a Lua-based alternative that offers better performance and deeper Neovim integration.
+
+## Standard fzf Plugin
+
+### Installation
+
+The fzf Vim plugin works identically in Neovim. Use [vim-plug](https://github.com/junegunn/vim-plug) or your preferred plugin manager:
+
+<Steps>
+  <Step title="Install with vim-plug">
+    Add to your Neovim configuration (`~/.config/nvim/init.vim` or `~/.config/nvim/init.lua`):
+
+    **Vimscript:**
+    ```vim
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'junegunn/fzf.vim'
+    ```
+
+    **Lua:**
+    ```lua
+    vim.call('plug#begin')
+    vim.fn['plug#']('junegunn/fzf', { ['do'] = function() vim.fn['fzf#install']() end })
+    vim.fn['plug#']('junegunn/fzf.vim')
+    vim.call('plug#end')
+    ```
+  </Step>
+
+  <Step title="Run :PlugInstall">
+    After adding the plugins, run:
+    ```vim
+    :PlugInstall
+    ```
+  </Step>
+</Steps>
+
+### Usage
+
+All Vim fzf features work in Neovim:
+
+```vim
+" Basic commands
+:FZF
+:Files
+:GFiles
+:Buffers
+:Rg pattern
+
+" Programmatic usage
+call fzf#run({'source': 'fd', 'sink': 'e'})
+```
+
+See the [Vim Integration](/integrations/vim) page for complete documentation of features and configuration.
+
+### Neovim-Specific Features
+
+#### Terminal Buffer
+
+On Neovim, fzf runs in a terminal buffer. Configure terminal colors for better appearance:
+
+```lua
+-- Lua configuration
+vim.g.terminal_color_0 = '#4e4e4e'
+vim.g.terminal_color_1 = '#d68787'
+vim.g.terminal_color_2 = '#5f865f'
+vim.g.terminal_color_3 = '#d8af5f'
+vim.g.terminal_color_4 = '#85add4'
+vim.g.terminal_color_5 = '#d7afaf'
+vim.g.terminal_color_6 = '#87afaf'
+vim.g.terminal_color_7 = '#d0d0d0'
+vim.g.terminal_color_8 = '#626262'
+vim.g.terminal_color_9 = '#d75f87'
+vim.g.terminal_color_10 = '#87af87'
+vim.g.terminal_color_11 = '#ffd787'
+vim.g.terminal_color_12 = '#add4fb'
+vim.g.terminal_color_13 = '#ffafaf'
+vim.g.terminal_color_14 = '#87d7d7'
+vim.g.terminal_color_15 = '#e4e4e4'
+```
+
+#### Popup Windows
+
+Neovim's floating window support provides a modern popup experience:
+
+```lua
+-- Lua configuration
+vim.g.fzf_layout = {
+  window = {
+    width = 0.9,
+    height = 0.6,
+    border = 'rounded'
+  }
+}
+```
+
+## fzf-lua: Lua-Based Alternative
+
+For Neovim users who prefer Lua-based plugins, [fzf-lua](https://github.com/ibhagwan/fzf-lua) offers a pure Lua implementation with enhanced performance and Neovim-native integration.
+
+### Why fzf-lua?
+
+- **Better performance** - Pure Lua implementation is faster
+- **Native Neovim integration** - Uses Neovim's built-in APIs
+- **Modern UI** - Leverages floating windows and other Neovim features
+- **Extensive built-in commands** - Large collection of pre-configured pickers
+- **LSP integration** - Deep integration with Neovim's LSP client
+- **Git integration** - Comprehensive git commands and previews
+
+### Installation
+
+<Steps>
+  <Step title="Install with your plugin manager">
+    **Using vim-plug:**
+    ```vim
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
+    ```
+
+    **Using packer.nvim:**
+    ```lua
+    use {
+      'ibhagwan/fzf-lua',
+      requires = { 'junegunn/fzf' }
+    }
+    ```
+
+    **Using lazy.nvim:**
+    ```lua
+    {
+      'ibhagwan/fzf-lua',
+      dependencies = { 'junegunn/fzf' },
+      config = function()
+        require('fzf-lua').setup({})
+      end
+    }
+    ```
+  </Step>
+
+  <Step title="Configure (optional)">
+    Basic configuration:
+
+    ```lua
+    require('fzf-lua').setup({
+      winopts = {
+        height = 0.85,
+        width = 0.80,
+        preview = {
+          default = 'bat',
+          border = 'border',
+          wrap = 'nowrap',
+          scrollbar = 'float',
+        },
+      },
+    })
+    ```
+  </Step>
+</Steps>
+
+### Common Commands
+
+```lua
+-- File pickers
+require('fzf-lua').files()
+require('fzf-lua').git_files()
+require('fzf-lua').oldfiles()
+
+-- Search
+require('fzf-lua').live_grep()
+require('fzf-lua').grep_project()
+require('fzf-lua').buffers()
+
+-- LSP
+require('fzf-lua').lsp_document_symbols()
+require('fzf-lua').lsp_references()
+require('fzf-lua').lsp_definitions()
+
+-- Git
+require('fzf-lua').git_status()
+require('fzf-lua').git_commits()
+require('fzf-lua').git_branches()
+
+-- Misc
+require('fzf-lua').commands()
+require('fzf-lua').help_tags()
+require('fzf-lua').colorschemes()
+```
+
+### Key Mappings Example
+
+```lua
+local fzf = require('fzf-lua')
+
+vim.keymap.set('n', '<leader>ff', fzf.files, { desc = 'Find files' })
+vim.keymap.set('n', '<leader>fg', fzf.live_grep, { desc = 'Live grep' })
+vim.keymap.set('n', '<leader>fb', fzf.buffers, { desc = 'Find buffers' })
+vim.keymap.set('n', '<leader>fh', fzf.help_tags, { desc = 'Help tags' })
+vim.keymap.set('n', '<leader>fo', fzf.oldfiles, { desc = 'Recent files' })
+vim.keymap.set('n', '<leader>fc', fzf.git_commits, { desc = 'Git commits' })
+vim.keymap.set('n', '<leader>fs', fzf.git_status, { desc = 'Git status' })
+vim.keymap.set('n', '<leader>lr', fzf.lsp_references, { desc = 'LSP references' })
+vim.keymap.set('n', '<leader>ld', fzf.lsp_definitions, { desc = 'LSP definitions' })
+vim.keymap.set('n', '<leader>ls', fzf.lsp_document_symbols, { desc = 'LSP symbols' })
+```
+
+## Choosing Between fzf.vim and fzf-lua
+
+| Feature | fzf.vim | fzf-lua |
+| --- | --- | --- |
+| **Language** | VimScript | Lua |
+| **Performance** | Good | Excellent |
+| **Vim support** | Yes | Neovim only |
+| **LSP integration** | Limited | Native |
+| **Customization** | VimScript functions | Lua tables/functions |
+| **Maintenance** | Official fzf project | Community-maintained |
+| **Learning curve** | Lower | Moderate |
+
+**Use fzf.vim if:**
+- You need Vim compatibility
+- You prefer VimScript configuration
+- You want the official implementation
+
+**Use fzf-lua if:**
+- You use Neovim exclusively
+- You want better performance
+- You prefer Lua configuration
+- You need deep LSP integration
+
+## See Also
+
+- [Vim Integration](/integrations/vim) - Complete Vim plugin documentation
+- [Shell Integration](/shell/setup) - Command-line key bindings
+- [fzf-lua documentation](https://github.com/ibhagwan/fzf-lua) - Official fzf-lua docs

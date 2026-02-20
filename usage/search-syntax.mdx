@@ -1,0 +1,318 @@
+---
+title: Search Syntax
+description: Complete reference for fzf search syntax including fuzzy matching, exact match, prefix/suffix search, inverse match, and OR operators
+---
+
+## Extended Search Mode
+
+By default, fzf starts in "extended-search mode" where you can type multiple search terms delimited by spaces.
+
+```bash
+fzf
+# Type: ^music .mp3$ sbtrkt !fire
+```
+
+This will match items that:
+- Start with `music` (prefix match)
+- End with `.mp3` (suffix match)
+- Fuzzy match `sbtrkt`
+- Do NOT include `fire` (inverse match)
+
+<Note>
+All search terms are combined with AND logic - items must match all terms to appear in results.
+</Note>
+
+## Search Token Reference
+
+The following table shows all available search tokens:
+
+| Token | Match Type | Description |
+|-------|-----------|-------------|
+| `sbtrkt` | fuzzy-match | Items that match `sbtrkt` |
+| `'wild` | exact-match (quoted) | Items that include `wild` |
+| `'wild'` | exact-boundary-match (quoted both ends) | Items that include `wild` at word boundaries |
+| `^music` | prefix-exact-match | Items that start with `music` |
+| `.mp3$` | suffix-exact-match | Items that end with `.mp3` |
+| `!fire` | inverse-exact-match | Items that do NOT include `fire` |
+| `!^music` | inverse-prefix-exact-match | Items that do NOT start with `music` |
+| `!.mp3$` | inverse-suffix-exact-match | Items that do NOT end with `.mp3` |
+
+## Match Type Details
+
+### Fuzzy Match (Default)
+
+Fuzzy matching allows you to type characters with omissions and still get relevant results:
+
+```bash
+# Typing "fzf" will match:
+# - fzf
+# - fuzzy-finder
+# - FuZzy_Filter
+# - file_zip_func
+ls | fzf
+```
+
+<Tip>
+Fuzzy matching is optimized for interactive typing - you don't need to know the exact name, just type characters in order.
+</Tip>
+
+### Exact Match (Single Quote)
+
+Use a single quote prefix to search for an exact substring:
+
+```bash
+# Type: 'music
+# Matches: "background-music", "music-player", "my_music_file"
+# Does NOT match: "musician" (needs the exact substring "music")
+fzf
+```
+
+### Exact Boundary Match (Double Quote)
+
+Use quotes on both sides to match at word boundaries:
+
+```bash
+# Type: 'wild'
+# Matches: "wild", "wild-west", "something-wild"
+# Does NOT match: "wildcard", "wilderness"
+fzf
+```
+
+<Note>
+Word boundaries are defined by non-alphanumeric characters.
+</Note>
+
+### Prefix Match (Caret)
+
+The `^` prefix matches items that start with the search term:
+
+```bash
+# Type: ^music
+# Matches: "music.mp3", "music-player", "musicology"
+# Does NOT match: "background-music", "pop-music"
+fzf
+```
+
+### Suffix Match (Dollar Sign)
+
+The `$` suffix matches items that end with the search term:
+
+```bash
+# Type: .mp3$
+# Matches: "song.mp3", "audio.mp3"
+# Does NOT match: "mp3-player", "music.mp3.backup"
+fzf
+```
+
+### Inverse Match (Exclamation)
+
+The `!` prefix excludes items that match the pattern:
+
+```bash
+# Type: !fire
+# Shows all items EXCEPT those containing "fire"
+fzf
+```
+
+<Tabs>
+  <Tab title="Inverse Exact">
+    ```bash
+    # Type: !test
+    # Excludes items containing "test"
+    ```
+  </Tab>
+  
+  <Tab title="Inverse Prefix">
+    ```bash
+    # Type: !^test
+    # Excludes items starting with "test"
+    ```
+  </Tab>
+  
+  <Tab title="Inverse Suffix">
+    ```bash
+    # Type: !.log$
+    # Excludes items ending with ".log"
+    ```
+  </Tab>
+</Tabs>
+
+## OR Operator
+
+A single bar character `|` acts as an OR operator:
+
+```bash
+# Type: ^core go$ | rb$ | py$
+# Matches entries that start with "core" AND end with either "go", "rb", or "py"
+fzf
+```
+
+### Complex OR Queries
+
+```bash
+# Match multiple file extensions
+# Type: .js$ | .ts$ | .jsx$ | .tsx$
+find . -type f | fzf
+
+# Match multiple prefixes
+# Type: ^src | ^test | ^lib
+fd --type d | fzf
+```
+
+<Warning>
+The OR operator has lower precedence than spaces (AND). Terms separated by spaces are ANDed together first, then OR is evaluated.
+
+Example: `term1 term2 | term3 term4` means `(term1 AND term2) OR (term3 AND term4)`
+</Warning>
+
+## Exact Mode
+
+If you prefer exact matching by default and don't want to quote every word, start fzf with the `-e` or `--exact` option:
+
+```bash
+fzf --exact
+```
+
+In exact mode:
+- All terms use exact matching by default
+- The `'` prefix "unquotes" the term to enable fuzzy matching
+
+```bash
+# With --exact flag:
+# Type: music       <- exact match
+# Type: 'music      <- fuzzy match
+fzf --exact
+```
+
+<Tip>
+Add `--exact` to `$FZF_DEFAULT_OPTS` if you prefer exact matching globally:
+
+```bash
+export FZF_DEFAULT_OPTS='--exact'
+```
+</Tip>
+
+## Practical Examples
+
+### Finding Source Files
+
+```bash
+# Find JavaScript/TypeScript files excluding tests
+# Type: .js$ | .ts$ !test !spec
+find . -type f | fzf
+```
+
+### Filtering Processes
+
+```bash
+# Find Python processes but exclude grep itself
+# Type: python !grep
+ps aux | fzf
+```
+
+### Git Branch Selection
+
+```bash
+# Find feature branches but exclude old ones
+# Type: ^feature !old !archived
+git branch | fzf
+```
+
+### Log File Filtering
+
+```bash
+# Find error logs from today, exclude debug
+# Type: error 2026-02-20 !debug
+find /var/log -type f -exec cat {} \; | fzf
+```
+
+## Search Algorithm Options
+
+fzf provides algorithm schemes optimized for different types of input:
+
+<Tabs>
+  <Tab title="Default">
+    ```bash
+    fzf --scheme=default
+    ```
+    
+    Generic scheme designed to work well with any kind of input.
+  </Tab>
+  
+  <Tab title="Path">
+    ```bash
+    fzf --scheme=path
+    ```
+    
+    Optimized for file paths - gives higher priority to matches in the basename.
+  </Tab>
+  
+  <Tab title="History">
+    ```bash
+    fzf --scheme=history
+    ```
+    
+    Suitable for command history where chronological ordering is important.
+  </Tab>
+</Tabs>
+
+<Note>
+See `fzf --man` for detailed information about each scheme's scoring algorithm.
+</Note>
+
+## Performance Considerations
+
+Certain options can affect search performance:
+
+<CardGroup cols={2}>
+  <Card title="--nth" icon="gauge-high">
+    Tokenizes each line before matching, which is slower on large lists.
+    
+    ```bash
+    # Only search in specific fields
+    ps aux | fzf --nth 11..
+    ```
+  </Card>
+  
+  <Card title="--delimiter" icon="slash">
+    Use plain string delimiters instead of regex when possible:
+    
+    ```bash
+    # Faster
+    fzf --delimiter ':'
+    
+    # Slower
+    fzf --delimiter '\s+'
+    ```
+  </Card>
+  
+  <Card title="--with-nth" icon="gauge-high">
+    Requires tokenization and reassembly, which slows processing.
+    
+    ```bash
+    # Display only certain fields
+    ps aux | fzf --with-nth 2,11..
+    ```
+  </Card>
+  
+  <Card title="--ansi" icon="palette">
+    Parses ANSI color codes, making initial scanning slower. Avoid adding to `$FZF_DEFAULT_OPTS`.
+    
+    ```bash
+    # Use only when needed
+    rg --color=always ... | fzf --ansi
+    ```
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Display Modes" icon="window-restore" href="/usage/display-modes">
+    Learn about fullscreen, --height, and --tmux display modes
+  </Card>
+  
+  <Card title="Key Bindings" icon="keyboard" href="/usage/key-bindings">
+    Discover navigation, selection, and custom key bindings
+  </Card>
+</CardGroup>

@@ -1,0 +1,290 @@
+---
+title: Becoming a Different Process
+description: Transform fzf into another process using the become() action
+---
+
+The `become(...)` action allows fzf to transform itself into a different process. Instead of executing a command and returning to fzf, `become` replaces fzf entirely with the new process.
+
+## Basic Usage
+
+```bash
+fzf --bind 'enter:become(vim {})'
+```
+
+When you press Enter, fzf terminates and becomes Vim, opening the selected file.
+
+## Advantages Over Command Substitution
+
+Consider the traditional command substitution approach:
+
+```bash
+vim "$(fzf)"
+```
+
+This has several problems that `become()` solves:
+
+### Problem 1: Empty File on CTRL-C
+
+**Command substitution:**
+```bash
+vim "$(fzf)"  # If you press CTRL-C, vim opens with an empty filename
+```
+
+**Using become:**
+```bash
+fzf --bind 'enter:become(vim {})'  # CTRL-C exits cleanly, vim never starts
+```
+
+### Problem 2: Empty File on Empty Results
+
+**Command substitution:**
+```bash
+vim "$(fzf)"  # If you press ENTER with no selection, vim opens empty file
+```
+
+**Using become:**
+```bash
+fzf --bind 'enter:become(vim {})'  # Nothing happens if there's no selection
+```
+
+### Problem 3: Whitespace in Filenames
+
+**Command substitution:**
+```bash
+vim "$(fzf)"  # Works for single file, but what about multiple selections?
+```
+
+**Using become:**
+```bash
+fzf --multi --bind 'enter:become(vim {+})'  # Handles multiple files with spaces correctly
+```
+
+## Multiple Selections
+
+Use `{+}` to pass all selected items:
+
+```bash
+fzf --multi --bind 'enter:become(vim {+})'
+```
+
+- Select multiple files with TAB
+- Press Enter to open all in Vim
+- Files with spaces are handled correctly
+
+## Multiple Actions for Different Programs
+
+You can set up different key bindings to open files with different programs:
+
+```bash
+fzf --bind 'enter:become(vim {})' \
+    --bind 'ctrl-e:become(emacs {})' \
+    --bind 'ctrl-o:become(open {})'
+```
+
+- **Enter**: Open in Vim
+- **CTRL-E**: Open in Emacs  
+- **CTRL-O**: Open with default application (macOS)
+
+This is cleaner than using `--expect`:
+
+```bash
+# Old approach with --expect
+result=$(fzf --expect=ctrl-e)
+key=$(echo "$result" | head -1)
+file=$(echo "$result" | tail -1)
+
+case "$key" in
+  ctrl-e) emacs "$file" ;;
+  *)      vim "$file" ;;
+esac
+
+# New approach with become
+fzf --bind 'enter:become(vim {})' \
+    --bind 'ctrl-e:become(emacs {})'
+```
+
+## Field Index Expressions
+
+Use field expressions to build sophisticated commands:
+
+```bash
+# Open file at specific line
+git grep --line-number . | \
+    fzf --delimiter : --nth 3.. \
+        --bind 'enter:become(vim {1} +{2})'
+```
+
+This example:
+1. Searches with `git grep` and shows line numbers
+2. Uses `:` as delimiter
+3. Opens Vim with:
+   - `{1}` - filename
+   - `+{2}` - line number
+
+### Available Expressions
+
+- `{}` - Entire line
+- `{1}`, `{2}`, ... - Individual fields (with `--delimiter`)
+- `{+}` - All selected items
+- `{q}` - Current query string  
+- `{n}` - Zero-based index
+
+## Practical Examples
+
+### Ripgrep Integration
+
+```bash
+#!/usr/bin/env bash
+
+RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+INITIAL_QUERY="${*:-}"
+fzf --ansi --disabled --query "$INITIAL_QUERY" \
+    --bind "start:reload:$RG_PREFIX {q}" \
+    --bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+    --bind 'enter:become(vim {1} +{2})' \
+    --delimiter : \
+    --preview 'bat --color=always {1} --highlight-line {2}' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3'
+```
+
+Features:
+- Search for text with ripgrep
+- Results update as you type
+- Press Enter to open file in Vim at exact line
+- fzf terminates and becomes Vim
+
+### Git Checkout
+
+```bash
+# Checkout git branch
+git branch | \
+  fzf --bind 'enter:become(git checkout {1})'
+```
+
+Simpler than:
+```bash
+git checkout $(git branch | fzf | awk '{print $1}')
+```
+
+### Package Manager
+
+```bash
+# Interactively uninstall packages (Homebrew)
+brew list | \
+  fzf --multi \
+      --bind 'enter:become(brew uninstall {+})' \
+      --preview 'brew info {}'
+```
+
+### File Browser with Multiple Handlers
+
+```bash
+# Smart file opener
+find . -type f | fzf \
+  --preview 'bat --color=always {}' \
+  --bind 'enter:become(vim {})' \
+  --bind 'ctrl-o:become(open {})' \
+  --bind 'ctrl-y:become(echo {} | pbcopy)'
+```
+
+## Comparison with xargs
+
+`become()` can often replace `xargs` with a cleaner syntax:
+
+**Using xargs:**
+```bash
+fzf --print0 | xargs -0 -o vim
+```
+
+**Using become:**
+```bash
+fzf --bind 'enter:become(vim {})'
+```
+
+**Multiple selections with xargs:**
+```bash
+fzf --multi --print0 | xargs -0 -o vim
+```
+
+**Multiple selections with become:**
+```bash
+fzf --multi --bind 'enter:become(vim {+})'
+```
+
+Advantages of `become()`:
+- Cleaner syntax
+- No need for `-o` flag (xargs `-o` reopens stdin for interactive programs)
+- Better handling of edge cases (CTRL-C, empty results)
+- Can set up multiple bindings easily
+
+## When to Use become vs execute
+
+Use **become** when:
+- You want fzf to exit and turn into another program
+- You're done selecting and want to act on the selection
+- You want cleaner process handling than command substitution
+
+Use **execute** when:
+- You want to perform an action and stay in fzf
+- You want to run multiple commands on different selections
+- You're previewing or inspecting items
+
+Examples:
+
+```bash
+# Use execute: View file and return to fzf
+fzf --bind 'ctrl-v:execute(less {})'
+
+# Use become: Open file and exit fzf
+fzf --bind 'enter:become(vim {})'
+```
+
+## Shell Execution
+
+Like `execute`, the command in `become()` is executed via your shell:
+
+```bash
+$SHELL -c 'command'
+```
+
+You can use:
+- Shell variables
+- Pipes and redirections  
+- Conditional logic
+
+Example with conditional logic:
+```bash
+fzf --bind 'enter:become(
+  if [[ {} == *.md ]]; then
+    vim {}
+  else
+    less {}
+  fi
+)'
+```
+
+## Integration with Shell Scripts
+
+Create wrapper scripts for common workflows:
+
+```bash
+#!/usr/bin/env bash
+# rgvim - ripgrep and open in vim
+
+RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+INITIAL_QUERY="${*:-}"
+
+fzf --ansi --disabled --query "$INITIAL_QUERY" \
+    --bind "start:reload:$RG_PREFIX {q}" \
+    --bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+    --bind 'enter:become(vim {1} +{2})' \
+    --delimiter : \
+    --preview 'bat --color=always {1} --highlight-line {2}' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3'
+```
+
+Usage:
+```bash
+chmod +x rgvim
+./rgvim search_term
+```

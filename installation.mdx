@@ -1,0 +1,379 @@
+---
+title: Installation
+description: Install fzf on macOS, Linux, Windows, and other platforms using various package managers
+---
+
+## Overview
+
+fzf is distributed as a single portable binary with no dependencies, making installation straightforward on any platform. Choose the method that works best for your system.
+
+<Note>
+  After installing fzf, you'll need to set up shell integration separately to enable key bindings (CTRL-T, CTRL-R, ALT-C) and fuzzy completion. See the [Shell Integration](#setting-up-shell-integration) section below.
+</Note>
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="macOS">
+    ### Using Homebrew
+    
+    The recommended way to install fzf on macOS:
+    
+    ```bash
+    brew install fzf
+    ```
+    
+    ### Using MacPorts
+    
+    Alternatively, you can use MacPorts:
+    
+    ```bash
+    sudo port install fzf
+    ```
+    
+    <Warning>
+      Homebrew and MacPorts install only the binary. Continue to the [Shell Integration](#setting-up-shell-integration) section to enable key bindings and fuzzy completion.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Linux">
+    ### Package Managers
+    
+    fzf is available in most Linux distribution repositories:
+    
+    <CodeGroup>
+    ```bash Debian/Ubuntu
+    sudo apt install fzf
+    ```
+    
+    ```bash Fedora
+    sudo dnf install fzf
+    ```
+    
+    ```bash Arch Linux
+    sudo pacman -S fzf
+    ```
+    
+    ```bash Alpine Linux
+    sudo apk add fzf
+    ```
+    
+    ```bash openSUSE
+    sudo zypper install fzf
+    ```
+    
+    ```bash Gentoo
+    emerge --ask app-shells/fzf
+    ```
+    
+    ```bash Void Linux
+    sudo xbps-install -S fzf
+    ```
+    </CodeGroup>
+    
+    ### Other Package Managers
+    
+    <CodeGroup>
+    ```bash Conda
+    conda install -c conda-forge fzf
+    ```
+    
+    ```bash Nix
+    nix-env -iA nixpkgs.fzf
+    ```
+    
+    ```bash Spack
+    spack install fzf
+    ```
+    </CodeGroup>
+    
+    ### FreeBSD / NetBSD / OpenBSD
+    
+    <CodeGroup>
+    ```bash FreeBSD
+    pkg install fzf
+    ```
+    
+    ```bash NetBSD
+    pkgin install fzf
+    ```
+    
+    ```bash OpenBSD
+    pkg_add fzf
+    ```
+    </CodeGroup>
+  </Tab>
+  
+  <Tab title="Windows">
+    fzf is available through several Windows package managers:
+    
+    <CodeGroup>
+    ```powershell Chocolatey
+    choco install fzf
+    ```
+    
+    ```powershell Scoop
+    scoop install fzf
+    ```
+    
+    ```powershell Winget
+    winget install fzf
+    ```
+    
+    ```bash MSYS2 (pacman)
+    pacman -S $MINGW_PACKAGE_PREFIX-fzf
+    ```
+    </CodeGroup>
+  </Tab>
+  
+  <Tab title="Using Mise">
+    [Mise](https://github.com/jdx/mise) is a polyglot runtime manager:
+    
+    ```bash
+    mise use -g fzf@latest
+    ```
+  </Tab>
+</Tabs>
+
+## Using Git
+
+For the most complete installation with automatic shell integration setup:
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+    ```
+  </Step>
+  
+  <Step title="Run the install script">
+    ```bash
+    ~/.fzf/install
+    ```
+    
+    The install script will:
+    - Download or build the fzf binary
+    - Add fzf to your `$PATH`
+    - Set up shell integration for key bindings and fuzzy completion
+    - Update your shell configuration files (`.bashrc`, `.zshrc`, etc.)
+  </Step>
+  
+  <Step title="Restart your shell">
+    ```bash
+    # For bash
+    source ~/.bashrc
+    
+    # For zsh
+    source ~/.zshrc
+    
+    # Or simply restart your terminal
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  The install script accepts several options:
+  
+  ```bash
+  # Download binary only, skip shell configuration
+  ~/.fzf/install --bin
+  
+  # Enable all features (key bindings + completion)
+  ~/.fzf/install --all
+  
+  # Disable specific features
+  ~/.fzf/install --no-key-bindings
+  ~/.fzf/install --no-completion
+  
+  # Use XDG base directory
+  ~/.fzf/install --xdg
+  ```
+</Tip>
+
+## Binary Releases
+
+You can download pre-built binaries directly from the releases page:
+
+<Steps>
+  <Step title="Download the binary">
+    Visit [https://github.com/junegunn/fzf/releases](https://github.com/junegunn/fzf/releases) and download the appropriate binary for your platform:
+    
+    - `fzf-0.68.0-darwin_amd64.tar.gz` - macOS (Intel)
+    - `fzf-0.68.0-darwin_arm64.tar.gz` - macOS (Apple Silicon)
+    - `fzf-0.68.0-linux_amd64.tar.gz` - Linux (x86_64)
+    - `fzf-0.68.0-linux_arm64.tar.gz` - Linux (ARM64)
+    - `fzf-0.68.0-windows_amd64.zip` - Windows (x86_64)
+  </Step>
+  
+  <Step title="Extract and install">
+    ```bash
+    # Extract the archive
+    tar -xzf fzf-0.68.0-linux_amd64.tar.gz
+    
+    # Make it executable
+    chmod +x fzf
+    
+    # Move to a directory in your PATH
+    sudo mv fzf /usr/local/bin/
+    ```
+  </Step>
+  
+  <Step title="Set up shell integration">
+    Continue to the [Shell Integration](#setting-up-shell-integration) section below.
+  </Step>
+</Steps>
+
+## Setting up Shell Integration
+
+Shell integration provides:
+- **CTRL-T**: Paste the selected files and directories onto the command-line
+- **CTRL-R**: Paste the selected command from history onto the command-line
+- **ALT-C**: cd into the selected directory
+- **Fuzzy completion** for files, directories, processes, and more
+
+<Tabs>
+  <Tab title="Bash">
+    Add the following line to your `~/.bashrc`:
+    
+    ```bash
+    # Set up fzf key bindings and fuzzy completion
+    eval "$(fzf --bash)"
+    ```
+    
+    Then reload your configuration:
+    
+    ```bash
+    source ~/.bashrc
+    ```
+  </Tab>
+  
+  <Tab title="Zsh">
+    Add the following line to your `~/.zshrc`:
+    
+    ```zsh
+    # Set up fzf key bindings and fuzzy completion
+    source <(fzf --zsh)
+    ```
+    
+    Then reload your configuration:
+    
+    ```bash
+    source ~/.zshrc
+    ```
+  </Tab>
+  
+  <Tab title="Fish">
+    Add the following line to your `~/.config/fish/config.fish`:
+    
+    ```fish
+    # Set up fzf key bindings
+    fzf --fish | source
+    ```
+    
+    Then reload your configuration:
+    
+    ```bash
+    source ~/.config/fish/config.fish
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  The `--bash`, `--zsh`, and `--fish` options are available in fzf 0.48.0 or later. If you have an older version, you'll need to source individual script files from the `/shell` directory. Check your package documentation for the exact file locations (e.g., `apt show fzf`).
+</Note>
+
+### Disabling Specific Key Bindings
+
+You can disable CTRL-T, CTRL-R, or ALT-C bindings by setting the corresponding `*_COMMAND` variable to an empty string:
+
+<CodeGroup>
+```bash Bash
+# Disable CTRL-R and ALT-C
+FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= eval "$(fzf --bash)"
+```
+
+```zsh Zsh
+# Disable CTRL-R and ALT-C
+FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source <(fzf --zsh)
+```
+
+```fish Fish
+# Disable CTRL-R and ALT-C
+fzf --fish | FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source
+```
+</CodeGroup>
+
+<Warning>
+  You must set these variables **before** sourcing the script. Setting them afterward will have no effect.
+</Warning>
+
+## Upgrading fzf
+
+Upgrade fzf using the same method you used to install it:
+
+<CodeGroup>
+```bash Homebrew
+brew update && brew upgrade fzf
+```
+
+```bash MacPorts
+sudo port upgrade fzf
+```
+
+```bash APT (Debian/Ubuntu)
+sudo apt update && sudo apt upgrade fzf
+```
+
+```bash Git
+cd ~/.fzf && git pull && ./install
+```
+
+```bash Chocolatey
+choco upgrade fzf
+```
+
+```vim Vim-plug
+:PlugUpdate fzf
+```
+</CodeGroup>
+
+## Building from Source
+
+If you want to build fzf from source or contribute to development, see [BUILD.md](https://github.com/junegunn/fzf/blob/master/BUILD.md) in the repository.
+
+## Vim/Neovim Plugin
+
+If you use [vim-plug](https://github.com/junegunn/vim-plug), add this to your Vim configuration:
+
+```vim
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+```
+
+- `junegunn/fzf` provides the basic library functions
+- `fzf#install()` ensures you have the latest binary
+- `junegunn/fzf.vim` is a separate project that provides useful commands
+
+<Tip>
+  If you use Neovim and prefer Lua-based plugins, check out [fzf-lua](https://github.com/ibhagwan/fzf-lua).
+</Tip>
+
+For more details on Vim integration, see [README-VIM.md](https://github.com/junegunn/fzf/blob/master/README-VIM.md).
+
+## Verification
+
+Verify your installation:
+
+```bash
+fzf --version
+```
+
+You should see output like:
+
+```
+0.68.0 (devel)
+```
+
+## Next Steps
+
+Now that fzf is installed, continue to the [Quick Start](/quickstart) guide to learn how to use it effectively.

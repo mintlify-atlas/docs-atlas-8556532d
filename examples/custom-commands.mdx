@@ -1,0 +1,270 @@
+---
+title: Custom Commands and Workflows
+description: Build custom interactive commands and workflows using fzf's powerful features
+---
+
+fzf's flexibility allows you to build custom interactive workflows for any command-line task. Learn how to combine fzf with other tools to create powerful custom commands.
+
+## Process Selection and Management
+
+Interactively select and manage system processes.
+
+### Basic Process Killing
+
+The simplest example of fzf as a Unix filter:
+
+```bash
+# 1. ps:   Feed the list of processes to fzf
+# 2. fzf:  Interactively select a process using fuzzy matching
+# 3. awk:  Extract the PID from the selected line
+# 4. kill: Kill the process with the PID
+ps -ef | fzf | awk '{print $2}' | xargs kill -9
+```
+
+### Process Monitor with Reload
+
+Add the ability to dynamically refresh the process list:
+
+```bash
+(date; ps -ef) |
+  fzf --bind='ctrl-r:reload(date; ps -ef)' \
+      --header=$'Press CTRL-R to reload\n\n' --header-lines=2 \
+      --preview='echo {}' --preview-window=down,3,wrap \
+      --layout=reverse --height=80% | awk '{print $2}' | xargs kill -9
+```
+
+**Features:**
+
+- Shows current date/time at the top
+- `--header-lines=2` prevents selecting the header rows
+- `CTRL-R` refreshes the process list without exiting fzf
+- Preview shows the full process line
+
+## Dynamic Data Source Switching
+
+Switch between different data sources with key bindings.
+
+### Toggle Between Files and Directories
+
+```bash
+find * | fzf --prompt 'All> ' \
+             --header 'CTRL-D: Directories / CTRL-F: Files' \
+             --bind 'ctrl-d:change-prompt(Directories> )+reload(find * -type d)' \
+             --bind 'ctrl-f:change-prompt(Files> )+reload(find * -type f)'
+```
+
+### Single Key Toggle
+
+Use one key to toggle between two modes:
+
+```bash
+fd --type file |
+  fzf --prompt 'Files> ' \
+      --header 'CTRL-T: Switch between Files/Directories' \
+      --bind 'ctrl-t:transform:[[ ! $FZF_PROMPT =~ Files ]] &&
+              echo "change-prompt(Files> )+reload(fd --type file)" ||
+              echo "change-prompt(Directories> )+reload(fd --type directory)"' \
+      --preview '[[ $FZF_PROMPT =~ Files ]] && bat --color=always {} || tree -C {}'
+```
+
+**How it works:**
+
+- `$FZF_PROMPT` stores the current prompt string
+- `transform` action checks the prompt to determine the current mode
+- The preview command also adapts based on the current mode
+
+## Log Tailing
+
+Use fzf to monitor and tail log files or long-running processes.
+
+```bash
+# With "follow", preview window will automatically scroll to the bottom
+fzf --preview-window follow --preview 'for i in $(seq 100000); do
+  echo "$i"
+  sleep 0.01
+  (( i % 300 == 0 )) && printf "\033[2J"
+done'
+```
+
+### Kubernetes Pod Log Browser
+
+Real-world example for browsing and tailing Kubernetes pod logs:
+
+```bash
+pods() {
+  command='kubectl get pods --all-namespaces' fzf \
+    --info=inline --layout=reverse --header-lines=1 \
+    --prompt "$(kubectl config current-context | sed 's/-context$//')> " \
+    --header $'╱ Enter (kubectl exec) ╱ CTRL-O (open log in editor) ╱ CTRL-R (reload) ╱\n\n' \
+    --bind 'start,ctrl-r:reload:$command' \
+    --bind 'ctrl-/:change-preview-window(80%,border-bottom|hidden|)' \
+    --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash' \
+    --bind 'ctrl-o:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2})' \
+    --preview-window up:follow \
+    --preview 'kubectl logs --follow --all-containers --tail=10000 --namespace {1} {2}' "$@"
+}
+```
+
+**Features:**
+
+- Live log tailing in the preview window
+- `ENTER`: Exec into the selected pod
+- `CTRL-O`: Open full logs in your editor
+- `CTRL-R`: Reload the pod list
+- `CTRL-/`: Toggle preview window visibility
+
+## Building Custom Workflows
+
+<Steps>
+
+<Step title="Identify the task">
+Determine what you want to interactively select or manage:
+- System processes
+- Docker containers
+- Database records
+- Configuration files
+- API endpoints
+- Custom data sources
+</Step>
+
+<Step title="Generate the list">
+Create a command that outputs the list of items, one per line:
+
+```bash
+# Examples
+ps -ef                           # Processes
+docker ps -a                     # Containers
+ls -la                           # Files
+kubectl get pods --all-namespaces # Kubernetes pods
+curl -s api.example.com/items    # API data
+```
+</Step>
+
+<Step title="Add interactivity with fzf">
+Pipe the output to fzf with appropriate options:
+
+```bash
+command | fzf --multi \
+              --preview 'preview_command {}' \
+              --bind 'key:action'
+```
+
+Useful options:
+- `--multi`: Enable multiple selection
+- `--header`: Add instructions
+- `--header-lines=N`: Exclude N header rows from selection
+- `--preview`: Show details
+- `--bind`: Add custom key bindings
+</Step>
+
+<Step title="Extract relevant fields">
+Use field index expressions or text processing:
+
+```bash
+# Extract specific columns
+{1}      # First field
+{2}      # Second field
+{1..3}   # Fields 1 through 3
+{+}      # All selected items
+{+2}     # Second field of all selected items
+
+# Or use standard tools
+fzf | awk '{print $2}'
+fzf | cut -d: -f1
+```
+</Step>
+
+<Step title="Perform actions">
+Choose how to handle the selection:
+
+```bash
+# Return to shell (default)
+command | fzf | xargs action_command
+
+# Execute without leaving fzf
+--bind 'enter:execute(action_command {})'
+
+# Execute silently
+--bind 'ctrl-y:execute-silent(echo {} | pbcopy)'
+
+# Transform into action command
+--bind 'enter:become(action_command {})'
+```
+</Step>
+
+<Step title="Add dynamic features">
+Enhance your command with dynamic capabilities:
+
+```bash
+# Reload data
+--bind 'ctrl-r:reload(command)'
+
+# Transform based on state
+--bind 'ctrl-t:transform:[[ condition ]] && echo "actions" || echo "other_actions"'
+
+# Multiple actions in sequence
+--bind 'key:action1+action2+action3'
+```
+</Step>
+
+</Steps>
+
+## Docker Container Management
+
+Complete example combining multiple concepts:
+
+```bash
+#!/usr/bin/env bash
+
+DOCKER_CMD='docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Image}}"'
+
+eval "$DOCKER_CMD" |
+  fzf --header-lines=1 \
+      --multi \
+      --bind 'ctrl-r:reload(eval "$DOCKER_CMD")' \
+      --bind 'enter:execute(docker start {1})' \
+      --bind 'ctrl-s:execute(docker stop {1})+reload(eval "$DOCKER_CMD")' \
+      --bind 'ctrl-d:execute(docker rm {1})+reload(eval "$DOCKER_CMD")' \
+      --bind 'ctrl-l:execute(docker logs -f {1})' \
+      --bind 'ctrl-e:execute(docker exec -it {1} /bin/bash)' \
+      --preview 'docker inspect {1}' \
+      --preview-window 'right,60%,wrap' \
+      --header 'ENTER: start | CTRL-S: stop | CTRL-D: remove | CTRL-L: logs | CTRL-E: exec | CTRL-R: reload'
+```
+
+## SSH Host Selection
+
+Interactively select and connect to SSH hosts:
+
+```bash
+#!/usr/bin/env bash
+
+# Extract hosts from SSH config
+grep -E '^Host ' ~/.ssh/config | awk '{print $2}' | grep -v '*' |
+  fzf --preview 'grep -A 20 "^Host {}" ~/.ssh/config' \
+      --preview-window 'right,50%,wrap' \
+      --bind 'enter:become(ssh {})' \
+      --bind 'ctrl-c:execute-silent(echo {} | pbcopy)' \
+      --header 'ENTER: connect | CTRL-C: copy hostname'
+```
+
+## Environment Variable Browser
+
+Browse and export environment variables:
+
+```bash
+env | sort |
+  fzf --preview 'echo {}' \
+      --preview-window 'down,3,wrap' \
+      --bind 'enter:execute-silent(echo {} | pbcopy)+abort' \
+      --bind 'ctrl-e:become(echo export {})' \
+      --header 'ENTER: copy | CTRL-E: print export command'
+```
+
+<Tip>
+When building custom commands, start simple and iteratively add features. Use `--bind` to add actions, `--preview` to show context, and `reload` to keep data fresh.
+</Tip>
+
+<Note>
+For debugging custom commands, add `--print-query` to see what query was entered, or use `execute` actions with temporary files to log intermediate results.
+</Note>

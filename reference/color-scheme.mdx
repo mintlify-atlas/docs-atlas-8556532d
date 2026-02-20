@@ -1,0 +1,679 @@
+---
+title: Color Scheme
+description: Complete color scheme options and customization reference for fzf
+---
+
+fzf provides extensive color customization through the `--color` option. You can choose from preset themes or create completely custom color schemes.
+
+## Base Themes
+
+fzf includes several base themes:
+
+```bash
+# Dark theme (default for dark terminals)
+fzf --color=dark
+
+# Light theme (for light terminals)
+fzf --color=light
+
+# 16-color theme (uses terminal's 16 ANSI colors)
+fzf --color=16
+fzf --color=base16
+
+# No colors (black and white)
+fzf --color=bw
+fzf --color=no
+```
+
+## Color Elements
+
+You can customize individual color elements using the format `--color=ELEMENT:COLOR[,ELEMENT:COLOR...]`
+
+### Main Interface Elements
+
+<ParamField path="fg" type="color">
+  Foreground color for regular text.
+  
+  ```bash
+  fzf --color=fg:15
+  fzf --color=fg:#ffffff
+  ```
+</ParamField>
+
+<ParamField path="bg" type="color">
+  Background color.
+  
+  ```bash
+  fzf --color=bg:0
+  fzf --color=bg:#1e1e1e
+  ```
+</ParamField>
+
+<ParamField path="hl" type="color">
+  Highlighted substrings (matches).
+  
+  ```bash
+  fzf --color=hl:33
+  fzf --color=hl:#5fd7ff
+  ```
+</ParamField>
+
+<ParamField path="fg+" type="color">
+  Foreground color for current line (selected line).
+  
+  ```bash
+  fzf --color=fg+:bright-white
+  fzf --color=fg+:#d0d0d0
+  ```
+</ParamField>
+
+<ParamField path="bg+" type="color">
+  Background color for current line (selected line).
+  
+  ```bash
+  fzf --color=bg+:237
+  fzf --color=bg+:#3a3a3a
+  ```
+</ParamField>
+
+<ParamField path="hl+" type="color">
+  Highlighted substrings on current line.
+  
+  ```bash
+  fzf --color=hl+:bright-cyan
+  fzf --color=hl+:#5fd7ff
+  ```
+</ParamField>
+
+### List Section
+
+<ParamField path="list-fg" type="color">
+  Foreground color for the list section.
+  
+  ```bash
+  fzf --color=list-fg:white
+  ```
+</ParamField>
+
+<ParamField path="list-bg" type="color">
+  Background color for the list section.
+  
+  ```bash
+  fzf --color=list-bg:black
+  ```
+</ParamField>
+
+<ParamField path="list-border" type="color">
+  Color of list section border.
+  
+  ```bash
+  fzf --list-border --color=list-border:cyan
+  ```
+</ParamField>
+
+<ParamField path="list-label" type="color">
+  Color of list section label.
+  
+  ```bash
+  fzf --list-border --list-label=' Files ' --color=list-label:green
+  ```
+</ParamField>
+
+<ParamField path="gutter" type="color">
+  Background color of gutter column.
+  
+  ```bash
+  fzf --color=gutter:black
+  ```
+</ParamField>
+
+<ParamField path="alt-gutter" type="color">
+  Alternative gutter color.
+  
+  ```bash
+  fzf --color=alt-gutter:237
+  ```
+</ParamField>
+
+### Selection
+
+<ParamField path="selected-fg" type="color">
+  Foreground color for selected items (multi-select).
+  
+  ```bash
+  fzf --multi --color=selected-fg:bright-green
+  ```
+</ParamField>
+
+<ParamField path="selected-bg" type="color">
+  Background color for selected items (multi-select).
+  
+  ```bash
+  fzf --multi --color=selected-bg:22
+  ```
+</ParamField>
+
+<ParamField path="selected-hl" type="color">
+  Highlighted matches in selected items.
+  
+  ```bash
+  fzf --multi --color=selected-hl:bright-cyan
+  ```
+</ParamField>
+
+### Input Section
+
+<ParamField path="input-fg" type="color">
+  Foreground color for input text. Alias: `query`, `input`.
+  
+  ```bash
+  fzf --color=input-fg:white
+  ```
+</ParamField>
+
+<ParamField path="input-bg" type="color">
+  Background color for input section.
+  
+  ```bash
+  fzf --color=input-bg:black
+  ```
+</ParamField>
+
+<ParamField path="input-border" type="color">
+  Color of input section border.
+  
+  ```bash
+  fzf --input-border --color=input-border:blue
+  ```
+</ParamField>
+
+<ParamField path="input-label" type="color">
+  Color of input section label.
+  
+  ```bash
+  fzf --input-border --input-label=' Query ' --color=input-label:blue
+  ```
+</ParamField>
+
+<ParamField path="prompt" type="color">
+  Color of the prompt.
+  
+  ```bash
+  fzf --color=prompt:magenta
+  fzf --color=prompt:#d7005f
+  ```
+</ParamField>
+
+<ParamField path="ghost" type="color">
+  Ghost text color (placeholder text).
+  
+  ```bash
+  fzf --ghost='Type to search...' --color=ghost:240
+  ```
+</ParamField>
+
+### Info Line
+
+<ParamField path="info" type="color">
+  Info text color (match count, etc.).
+  
+  ```bash
+  fzf --color=info:yellow
+  fzf --color=info:#afaf87
+  ```
+</ParamField>
+
+<ParamField path="separator" type="color">
+  Color of the separator line.
+  
+  ```bash
+  fzf --color=separator:240
+  ```
+</ParamField>
+
+<ParamField path="spinner" type="color">
+  Spinner color while loading.
+  
+  ```bash
+  fzf --color=spinner:magenta
+  ```
+</ParamField>
+
+### Markers and Pointers
+
+<ParamField path="pointer" type="color">
+  Current line pointer color.
+  
+  ```bash
+  fzf --color=pointer:red
+  fzf --color=pointer:#af5fff
+  ```
+</ParamField>
+
+<ParamField path="marker" type="color">
+  Multi-select marker color.
+  
+  ```bash
+  fzf --multi --color=marker:green
+  fzf --multi --color=marker:#87ff00
+  ```
+</ParamField>
+
+### Preview Window
+
+<ParamField path="preview-fg" type="color">
+  Foreground color in preview window.
+  
+  ```bash
+  fzf --preview 'cat {}' --color=preview-fg:white
+  ```
+</ParamField>
+
+<ParamField path="preview-bg" type="color">
+  Background color in preview window.
+  
+  ```bash
+  fzf --preview 'cat {}' --color=preview-bg:234
+  ```
+</ParamField>
+
+<ParamField path="preview-border" type="color">
+  Color of preview window border.
+  
+  ```bash
+  fzf --preview 'cat {}' --preview-border --color=preview-border:cyan
+  ```
+</ParamField>
+
+<ParamField path="preview-label" type="color">
+  Color of preview window label.
+  
+  ```bash
+  fzf --preview 'cat {}' --preview-label=' Preview ' --color=preview-label:cyan
+  ```
+</ParamField>
+
+<ParamField path="preview-scrollbar" type="color">
+  Color of preview window scrollbar.
+  
+  ```bash
+  fzf --preview 'cat {}' --color=preview-scrollbar:blue
+  ```
+</ParamField>
+
+### Header
+
+<ParamField path="header-fg" type="color">
+  Header text foreground color. Alias: `header`.
+  
+  ```bash
+  fzf --header='Instructions' --color=header-fg:bright-white
+  ```
+</ParamField>
+
+<ParamField path="header-bg" type="color">
+  Header section background color.
+  
+  ```bash
+  fzf --header='Instructions' --color=header-bg:237
+  ```
+</ParamField>
+
+<ParamField path="header-border" type="color">
+  Color of header section border.
+  
+  ```bash
+  fzf --header='Info' --header-border --color=header-border:cyan
+  ```
+</ParamField>
+
+<ParamField path="header-label" type="color">
+  Color of header section label.
+  
+  ```bash
+  fzf --header-border --header-label=' Info ' --color=header-label:cyan
+  ```
+</ParamField>
+
+### Footer
+
+<ParamField path="footer-fg" type="color">
+  Footer text foreground color. Alias: `footer`.
+  
+  ```bash
+  fzf --footer='Help text' --color=footer-fg:240
+  ```
+</ParamField>
+
+<ParamField path="footer-bg" type="color">
+  Footer section background color.
+  
+  ```bash
+  fzf --footer='Help text' --color=footer-bg:234
+  ```
+</ParamField>
+
+<ParamField path="footer-border" type="color">
+  Color of footer section border.
+  
+  ```bash
+  fzf --footer='Help' --footer-border --color=footer-border:cyan
+  ```
+</ParamField>
+
+<ParamField path="footer-label" type="color">
+  Color of footer section label.
+  
+  ```bash
+  fzf --footer-border --footer-label=' Help ' --color=footer-label:cyan
+  ```
+</ParamField>
+
+### Borders and Labels
+
+<ParamField path="border" type="color">
+  Main border color.
+  
+  ```bash
+  fzf --border --color=border:blue
+  fzf --border --color=border:#778899
+  ```
+</ParamField>
+
+<ParamField path="label" type="color">
+  Main border label color.
+  
+  ```bash
+  fzf --border --border-label=' Select ' --color=label:green
+  ```
+</ParamField>
+
+<ParamField path="scrollbar" type="color">
+  Scrollbar color.
+  
+  ```bash
+  fzf --color=scrollbar:cyan
+  ```
+</ParamField>
+
+### Special Elements
+
+<ParamField path="disabled" type="color">
+  Color for disabled text.
+  
+  ```bash
+  fzf --color=disabled:240
+  ```
+</ParamField>
+
+<ParamField path="nomatch" type="color">
+  Color for items with no match.
+  
+  ```bash
+  fzf --color=nomatch:red
+  ```
+</ParamField>
+
+<ParamField path="gap-line" type="color">
+  Color for gap lines.
+  
+  ```bash
+  fzf --gap=1 --gap-line='─' --color=gap-line:240
+  ```
+</ParamField>
+
+<ParamField path="alt-bg" type="color">
+  Alternative background color (alternating rows).
+  
+  ```bash
+  fzf --color=alt-bg:235
+  ```
+</ParamField>
+
+<ParamField path="nth" type="color">
+  Color for nth field indicators.
+  
+  ```bash
+  fzf --color=nth:blue
+  ```
+</ParamField>
+
+## Color Formats
+
+### ANSI Color Numbers (0-255)
+
+```bash
+# Basic 16 colors (0-15)
+fzf --color=fg:7,bg:0
+
+# Extended 256 colors (0-255)
+fzf --color=fg:252,bg:233,hl:110
+```
+
+### Named Colors
+
+```bash
+# Basic colors
+fzf --color=fg:black,bg:white
+fzf --color=fg:red,bg:green
+fzf --color=fg:yellow,bg:blue
+fzf --color=fg:magenta,bg:cyan
+
+# Bright colors
+fzf --color=fg:bright-white,bg:bright-black
+fzf --color=fg:bright-red,bg:bright-green
+fzf --color=fg:bright-yellow,bg:bright-blue
+fzf --color=fg:bright-magenta,bg:bright-cyan
+
+# Aliases
+fzf --color=fg:gray  # Same as bright-black
+fzf --color=fg:grey  # Same as bright-black
+```
+
+### Hex Colors (RGB)
+
+```bash
+# 24-bit true color
+fzf --color=fg:#d0d0d0,bg:#1a1a1a
+fzf --color=hl:#5fd7ff,hl+:#87d7ff
+```
+
+### Special Values
+
+```bash
+# Use terminal's default colors
+fzf --color=fg:-1,bg:-1
+
+# Inherit from another element
+fzf --color=fg+:fg  # fg+ inherits from fg
+```
+
+## Text Attributes
+
+Add text attributes after the color:
+
+```bash
+# Bold
+fzf --color=hl:bright-cyan:bold
+
+# Italic
+fzf --color=header:blue:italic
+
+# Underline styles
+fzf --color=fg+:white:underline
+fzf --color=fg+:white:underline-double
+fzf --color=fg+:white:underline-curly
+fzf --color=fg+:white:underline-dotted
+fzf --color=fg+:white:underline-dashed
+
+# Other attributes
+fzf --color=info:yellow:dim
+fzf --color=marker:green:blink
+fzf --color=pointer:red:reverse
+fzf --color=header:cyan:strikethrough
+
+# Multiple attributes
+fzf --color=hl:cyan:bold:underline
+
+# Reset to regular (remove bold)
+fzf --color=fg:white:regular
+
+# Strip ANSI codes
+fzf --color=fg:strip
+```
+
+## Complete Theme Examples
+
+### Monokai Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#f8f8f2,bg:#272822,hl:#66d9ef
+  --color=fg+:#f8f8f2,bg+:#44475a,hl+:#8be9fd
+  --color=info:#f1fa8c,prompt:#50fa7b,pointer:#ff79c6
+  --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4"
+```
+
+### Gruvbox Dark Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#ebdbb2,bg:#282828,hl:#fabd2f
+  --color=fg+:#ebdbb2,bg+:#3c3836,hl+:#fabd2f
+  --color=info:#83a598,prompt:#bdae93,pointer:#fe8019
+  --color=marker:#8ec07c,spinner:#fabd2f,header:#665c54"
+```
+
+### Nord Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#d8dee9,bg:#2e3440,hl:#81a1c1
+  --color=fg+:#d8dee9,bg+:#434c5e,hl+:#81a1c1
+  --color=info:#eacb8a,prompt:#bf6069,pointer:#b48dac
+  --color=marker:#a3be8b,spinner:#b48dac,header:#4c566a"
+```
+
+### Dracula Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9
+  --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9
+  --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6
+  --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4"
+```
+
+### Tokyo Night Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#c0caf5,bg:#1a1b26,hl:#bb9af7
+  --color=fg+:#c0caf5,bg+:#292e42,hl+:#7dcfff
+  --color=info:#7aa2f7,prompt:#7dcfff,pointer:#7dcfff
+  --color=marker:#9ece6a,spinner:#7dcfff,header:#545c7e"
+```
+
+### Solarized Dark Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#839496,bg:#002b36,hl:#268bd2
+  --color=fg+:#839496,bg+:#073642,hl+:#268bd2
+  --color=info:#b58900,prompt:#859900,pointer:#d33682
+  --color=marker:#2aa198,spinner:#cb4b16,header:#586e75"
+```
+
+### Solarized Light Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#657b83,bg:#fdf6e3,hl:#268bd2
+  --color=fg+:#657b83,bg+:#eee8d5,hl+:#268bd2
+  --color=info:#b58900,prompt:#859900,pointer:#d33682
+  --color=marker:#2aa198,spinner:#cb4b16,header:#93a1a1"
+```
+
+### One Dark Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#abb2bf,bg:#282c34,hl:#61afef
+  --color=fg+:#abb2bf,bg+:#3e4451,hl+:#61afef
+  --color=info:#e5c07b,prompt:#98c379,pointer:#c678dd
+  --color=marker:#56b6c2,spinner:#e06c75,header:#5c6370"
+```
+
+### Catppuccin Mocha Theme
+
+```bash
+export FZF_DEFAULT_OPTS="
+  --color=fg:#cdd6f4,bg:#1e1e2e,hl:#89b4fa
+  --color=fg+:#cdd6f4,bg+:#313244,hl+:#89b4fa
+  --color=info:#cba6f7,prompt:#a6e3a1,pointer:#f5e0dc
+  --color=marker:#f38ba8,spinner:#f5c2e7,header:#45475a"
+```
+
+## Creating Custom Themes
+
+### Step 1: Choose Base Theme
+
+```bash
+# Start with a base
+fzf --color=dark
+# or
+fzf --color=light
+```
+
+### Step 2: Customize Key Elements
+
+```bash
+# Customize matches
+fzf --color=dark,hl:#5fd7ff,hl+:#87d7ff
+
+# Customize current line
+fzf --color=dark,fg+:#d0d0d0,bg+:#262626
+```
+
+### Step 3: Add UI Elements
+
+```bash
+fzf --color=dark \
+    --color=fg:#bbccdd,bg:#1e1e1e \
+    --color=hl:#5fd7ff,fg+:#d0d0d0,bg+:#262626,hl+:#5fd7ff \
+    --color=info:#afaf87,prompt:#d7005f,pointer:#af5fff \
+    --color=marker:#87ff00,spinner:#af5fff,header:#87afaf
+```
+
+### Step 4: Test and Refine
+
+```bash
+# Test with preview
+fzf --preview 'cat {}' \
+    --color=your-custom-colors \
+    --preview-window=right:50%:border-left
+
+# Test with borders
+fzf --border --color=your-custom-colors,border:#aaaaaa
+```
+
+## Tips
+
+<Tip>
+  **Testing Colors**: Use a color picker or terminal color chart to find ANSI and hex color values that work well together.
+</Tip>
+
+<Tip>
+  **Theme Generators**: Check out [fzf Theme Playground](https://vitormv.github.io/fzf-themes/) for interactive theme creation.
+</Tip>
+
+<Tip>
+  **True Color Support**: Make sure your terminal supports 24-bit true color for hex color codes to work properly. Test with:
+  ```bash
+  echo $COLORTERM  # Should output 'truecolor' or '24bit'
+  ```
+</Tip>
+
+<Warning>
+  **Performance**: Using extensive ANSI colors (via `--ansi` flag) can impact performance on large datasets. Use sparingly for best performance.
+</Warning>

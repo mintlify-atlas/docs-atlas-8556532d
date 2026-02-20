@@ -1,0 +1,147 @@
+---
+title: Shell Integration Setup
+description: Set up fzf key bindings and fuzzy completion for bash, zsh, and fish
+---
+
+fzf provides powerful shell integration features including key bindings (CTRL-T, CTRL-R, ALT-C) and fuzzy completion. This guide covers the setup process for bash, zsh, and fish shells.
+
+## Quick Setup
+
+The easiest way to set up shell integration is using fzf's built-in commands:
+
+<Tabs>
+  <Tab title="Bash">
+    Add this line to your `~/.bashrc`:
+
+    ```bash
+    # Set up fzf key bindings and fuzzy completion
+    eval "$(fzf --bash)"
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    Add this line to your `~/.zshrc`:
+
+    ```zsh
+    # Set up fzf key bindings and fuzzy completion
+    source <(fzf --zsh)
+    ```
+  </Tab>
+  <Tab title="Fish">
+    Add this line to your `~/.config/fish/config.fish`:
+
+    ```fish
+    # Set up fzf key bindings
+    fzf --fish | source
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+The `--bash`, `--zsh`, and `--fish` options are only available in fzf 0.48.0 or later.
+</Note>
+
+## Manual Setup (Advanced)
+
+For finer control or older fzf versions, you can source individual script files from the `/shell` directory. The location varies by package manager:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    # Key bindings
+    source /usr/share/doc/fzf/examples/key-bindings.bash
+    
+    # Fuzzy completion
+    source /usr/share/doc/fzf/examples/completion.bash
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```zsh
+    # Key bindings
+    source /usr/share/doc/fzf/examples/key-bindings.zsh
+    
+    # Fuzzy completion
+    source /usr/share/doc/fzf/examples/completion.zsh
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```fish
+    # Key bindings and completion
+    source /usr/share/doc/fzf/examples/key-bindings.fish
+    source /usr/share/doc/fzf/examples/completion.fish
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+Use `apt show fzf` or your package manager's equivalent to find the exact file locations.
+</Tip>
+
+## Disabling Specific Key Bindings
+
+You can disable individual key bindings by setting the corresponding `*_COMMAND` variable to an empty string **before** sourcing the script:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    # Disable CTRL-R and ALT-C, keep CTRL-T
+    FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= eval "$(fzf --bash)"
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```zsh
+    # Disable CTRL-R and ALT-C, keep CTRL-T
+    FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source <(fzf --zsh)
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```fish
+    # Disable CTRL-R and ALT-C, keep CTRL-T
+    fzf --fish | FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Setting the variables **after** sourcing the script will have no effect. They must be set before or during the sourcing process.
+</Warning>
+
+## Verifying Installation
+
+After setting up shell integration, restart your shell or source your configuration file:
+
+```bash
+# Reload configuration
+source ~/.bashrc  # or ~/.zshrc or ~/.config/fish/config.fish
+```
+
+Test the key bindings:
+- Press `CTRL-T` to search for files
+- Press `CTRL-R` to search command history
+- Press `ALT-C` to change directory
+
+## What's Included
+
+Shell integration provides:
+
+<CardGroup cols={2}>
+  <Card title="Key Bindings" icon="keyboard" href="/shell/key-bindings">
+    CTRL-T, CTRL-R, and ALT-C shortcuts for file search, history, and directory navigation
+  </Card>
+  <Card title="Fuzzy Completion" icon="sparkles" href="/shell/fuzzy-completion">
+    Tab completion with fuzzy matching for files, directories, processes, and hosts
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<Steps>
+  <Step title="Configure Key Bindings">
+    Learn about [CTRL-T, CTRL-R, and ALT-C](/shell/key-bindings) and how to customize them
+  </Step>
+  <Step title="Set Up Fuzzy Completion">
+    Enable [fuzzy completion](/shell/fuzzy-completion) for various commands
+  </Step>
+  <Step title="Shell-Specific Configuration">
+    Explore advanced configuration for your shell: [Bash](/shell/bash) | [Zsh](/shell/zsh) | [Fish](/shell/fish)
+  </Step>
+</Steps>

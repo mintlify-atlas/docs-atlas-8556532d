@@ -1,0 +1,283 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for fzf
+---
+
+# Troubleshooting
+
+This guide covers common issues you might encounter when using fzf and their solutions.
+
+## Shell Integration Issues
+
+### Shell integration not working
+
+<Warning>
+If key bindings or fuzzy completion are not working, ensure you've properly set up shell integration.
+</Warning>
+
+**For bash:**
+```bash
+# Add this to ~/.bashrc
+eval "$(fzf --bash)"
+```
+
+**For zsh:**
+```zsh
+# Add this to ~/.zshrc
+source <(fzf --zsh)
+```
+
+**For fish:**
+```fish
+# Add this to ~/.config/fish/config.fish
+fzf --fish | source
+```
+
+<Note>
+The `--bash`, `--zsh`, and `--fish` options are only available in fzf 0.48.0 or later. For older versions, you'll need to source individual script files from the `/shell` directory.
+</Note>
+
+### Key bindings not working after installation
+
+After adding shell integration commands to your configuration file, you need to:
+
+1. Restart your shell or source the configuration file:
+   ```bash
+   # For bash
+   source ~/.bashrc
+   
+   # For zsh
+   source ~/.zshrc
+   
+   # For fish
+   source ~/.config/fish/config.fish
+   ```
+
+2. Verify that fzf is in your PATH:
+   ```bash
+   which fzf
+   fzf --version
+   ```
+
+### Disabling specific key bindings
+
+To disable CTRL-T, CTRL-R, or ALT-C bindings, set the corresponding `*_COMMAND` variable to an empty string **before** sourcing the script:
+
+**bash:**
+```bash
+# Disable CTRL-R and ALT-C
+FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= eval "$(fzf --bash)"
+```
+
+**zsh:**
+```zsh
+# Disable CTRL-R and ALT-C
+FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source <(fzf --zsh)
+```
+
+**fish:**
+```fish
+# Disable CTRL-R and ALT-C
+fzf --fish | FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= source
+```
+
+<Warning>
+Setting these variables **after** sourcing the script will have no effect. The order matters!
+</Warning>
+
+## .gitignore Support
+
+### fzf not respecting .gitignore files
+
+By default, fzf's built-in file walker does not respect `.gitignore` files. To enable this behavior, use external tools like `fd` or `ripgrep`.
+
+#### Using fd (recommended)
+
+```bash
+# Install fd first
+# macOS: brew install fd
+# Ubuntu/Debian: apt install fd-find
+# Arch: pacman -S fd
+
+# Set fd as the default command
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+
+# Apply to CTRL-T as well
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+```
+
+#### Include hidden files and follow symlinks
+
+```bash
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+```
+
+#### Using ripgrep
+
+```bash
+export FZF_DEFAULT_COMMAND='rg --files --hidden --follow --glob "!.git/*"'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+```
+
+<Note>
+Both `fd` and `ripgrep` automatically respect `.gitignore` files in your project.
+</Note>
+
+## Display Issues
+
+### Colors not displaying correctly
+
+If you're experiencing color issues:
+
+1. Check your terminal's color support:
+   ```bash
+   echo $TERM
+   ```
+   It should be `xterm-256color` or similar.
+
+2. If colors still don't work, try setting your TERM:
+   ```bash
+   export TERM=xterm-256color
+   ```
+
+3. Test ANSI color support:
+   ```bash
+   printf '\e[4:3;58;2;255;0;0mRed curly underline\e[0m\n' | fzf --ansi
+   ```
+
+### Preview window not showing
+
+<Warning>
+Never add `--preview` to your `$FZF_DEFAULT_OPTS` as fzf is a general-purpose text filter, not just a file finder.
+</Warning>
+
+**Wrong approach:**
+```bash
+# DO NOT DO THIS!
+export FZF_DEFAULT_OPTS='--preview "bat --style=numbers --color=always {}"'
+```
+
+This will cause errors when using fzf with non-file inputs like:
+```bash
+ps -ef | fzf
+seq 100 | fzf
+history | fzf
+```
+
+**Correct approach:**
+Use preview options per command or in specific bindings:
+```bash
+export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always {}'"
+```
+
+### Mouse not working on Windows
+
+If mouse support is not working on Windows:
+
+- Use Git Bash (mintty) - fzf now works out of the box via winpty integration
+- For other terminals, ensure you're using a recent version of fzf (0.53.0+)
+- Consider using `--no-mouse` if mouse support continues to cause issues
+
+### Non-ASCII input not working on Windows
+
+<Note>
+fzf has limitations with non-ASCII input on Windows when not in fullscreen mode.
+</Note>
+
+Workaround:
+```bash
+# Add --no-height to your FZF_DEFAULT_OPTS to enable fullscreen mode
+export FZF_DEFAULT_OPTS='--no-height'
+```
+
+## Performance Issues
+
+### Slow initial scanning
+
+If fzf is slow when starting:
+
+1. Avoid adding `--ansi` to `$FZF_DEFAULT_OPTS` - it makes initial scanning slower
+2. Use simple delimiters instead of regex:
+   ```bash
+   # Fast
+   fzf --delimiter ':'
+   
+   # Slower
+   fzf --delimiter '::'
+   ```
+
+3. Avoid `--nth` and `--with-nth` unless necessary - they require tokenizing each line
+
+### High memory usage with large inputs
+
+For endless streams or very large inputs, use `--tail` to limit memory:
+
+```bash
+# Keep only the last 100,000 items in memory
+tail -f *.log | fzf --tail 100000 --tac --no-sort --exact
+```
+
+## Vim/Neovim Integration
+
+### Vim plugin not working
+
+Ensure you've properly installed the plugin:
+
+**Using vim-plug:**
+```vim
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+```
+
+Then run `:PlugInstall` in Vim.
+
+### fzf binary not found by Vim
+
+Make sure fzf is in your PATH or set the path explicitly:
+
+```vim
+let g:fzf_command_prefix = 'Fzf'
+let $FZF_DEFAULT_COMMAND = 'fd --type f'
+```
+
+## Environment Variables
+
+### FZF_DEFAULT_COMMAND not being used
+
+<Warning>
+`FZF_DEFAULT_COMMAND` is **not** used by shell integration (CTRL-T, ALT-C, completion) due to different requirements.
+</Warning>
+
+For shell integration, use these instead:
+- CTRL-T: Set `$FZF_CTRL_T_COMMAND` or use `--walker*` options in `$FZF_CTRL_T_OPTS`
+- ALT-C: Set `$FZF_ALT_C_COMMAND` or use `--walker*` options in `$FZF_ALT_C_OPTS`
+- Completion: Override `_fzf_compgen_path()` and `_fzf_compgen_dir()` functions
+
+### Options not being applied
+
+Check the precedence of options:
+
+1. Command-line arguments (highest priority)
+2. `$FZF_DEFAULT_OPTS`
+3. `$FZF_DEFAULT_OPTS_FILE` (if set)
+4. Built-in defaults (lowest priority)
+
+To debug:
+```bash
+# Show effective options
+echo $FZF_DEFAULT_OPTS
+fzf --version
+```
+
+## Getting Help
+
+If you're still experiencing issues:
+
+1. Check the [GitHub issues](https://github.com/junegunn/fzf/issues) for similar problems
+2. Review the man page: `fzf --man` or `man fzf`
+3. Read the [advanced guide](https://github.com/junegunn/fzf/blob/master/ADVANCED.md)
+4. Report issues at https://github.com/junegunn/fzf/issues
+
+### Reporting Security Vulnerabilities
+
+For security-related issues, please follow the guidelines in [SECURITY.md](https://github.com/junegunn/fzf/blob/master/SECURITY.md) and report to junegunn.c@gmail.com instead of public issues.

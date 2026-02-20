@@ -1,0 +1,441 @@
+---
+title: Environment Variables
+description: Environment variables reference for configuring fzf behavior
+---
+
+fzf can be configured using environment variables. These variables are particularly useful for setting default options and customizing shell integration behavior.
+
+## Core Environment Variables
+
+<ParamField path="FZF_DEFAULT_COMMAND" type="string">
+  Default command to use when input is tty (no piped input).
+  
+  This command is executed when you run `fzf` without piping any input to it.
+  
+  ```bash
+  # Use fd instead of find
+  export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+  
+  # Use ripgrep for faster searching
+  export FZF_DEFAULT_COMMAND='rg --files'
+  
+  # Include hidden files, follow symlinks
+  export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+  
+  # Search with ag (the silver searcher)
+  export FZF_DEFAULT_COMMAND='ag --hidden --ignore .git -l -g ""'
+  ```
+  
+  <Warning>
+    `FZF_DEFAULT_COMMAND` is not used by shell integration key bindings. Use `FZF_CTRL_T_COMMAND`, `FZF_ALT_C_COMMAND`, or the `fzf_compgen_*` functions instead.
+  </Warning>
+</ParamField>
+
+<ParamField path="FZF_DEFAULT_OPTS" type="string">
+  Default options to apply to all fzf invocations.
+  
+  These options are applied automatically every time you run fzf, unless overridden.
+  
+  ```bash
+  # Basic options
+  export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
+  
+  # With preview window
+  export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border \
+    --preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+  
+  # Multi-line with custom theme
+  export FZF_DEFAULT_OPTS='
+    --height 40%
+    --layout=reverse
+    --border
+    --inline-info
+    --color=dark
+    --color=fg:-1,bg:-1,hl:#5f87af,fg+:#d0d0d0,bg+:#262626,hl+:#5fd7ff
+    --color=info:#afaf87,prompt:#d7005f,pointer:#af5fff,marker:#87ff00,spinner:#af5fff,header:#87afaf'
+  
+  # tmux popup mode
+  export FZF_DEFAULT_OPTS='--height 40% --tmux bottom,40% --layout=reverse --border=top'
+  ```
+  
+  <Tip>
+    Use backslashes or quotes for multi-line option strings to improve readability.
+  </Tip>
+</ParamField>
+
+<ParamField path="FZF_DEFAULT_OPTS_FILE" type="string">
+  Path to a file containing default options (one option per line).
+  
+  If you prefer to manage options in a file rather than an environment variable.
+  
+  ```bash
+  # Set the file location
+  export FZF_DEFAULT_OPTS_FILE=~/.config/fzf/config
+  
+  # Create the config file
+  cat > ~/.config/fzf/config << 'EOF'
+  --height=40%
+  --layout=reverse
+  --border
+  --preview=bat --color=always {}
+  --bind=ctrl-d:preview-page-down
+  --bind=ctrl-u:preview-page-up
+  EOF
+  ```
+</ParamField>
+
+<ParamField path="FZF_API_KEY" type="string">
+  X-API-Key header value for HTTP server authentication when using `--listen`.
+  
+  Used to secure the HTTP API endpoint.
+  
+  ```bash
+  # Set API key
+  export FZF_API_KEY='my-secret-key'
+  
+  # Start fzf with HTTP server
+  fzf --listen=6266
+  
+  # Make authenticated requests
+  curl -X POST http://localhost:6266 \
+    -H "X-API-Key: my-secret-key" \
+    -d '{"query": "test"}'
+  ```
+</ParamField>
+
+## Shell Integration Variables
+
+These variables control the behavior of fzf's shell integration key bindings (`CTRL-T`, `CTRL-R`, `ALT-C`).
+
+### CTRL-T Variables
+
+`CTRL-T` pastes selected files and directories onto the command line.
+
+<ParamField path="FZF_CTRL_T_COMMAND" type="string">
+  Command to generate the list of files and directories for `CTRL-T`.
+  
+  ```bash
+  # Use fd to generate file list
+  export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
+  
+  # Include both files and directories
+  export FZF_CTRL_T_COMMAND='fd --hidden --follow --exclude .git'
+  
+  # Use find (default behavior)
+  export FZF_CTRL_T_COMMAND='find . -type f'
+  
+  # Disable CTRL-T by setting to empty string
+  export FZF_CTRL_T_COMMAND=''
+  ```
+  
+  <Note>
+    If not set, fzf uses `--walker file,dir,follow,hidden` option.
+  </Note>
+</ParamField>
+
+<ParamField path="FZF_CTRL_T_OPTS" type="string">
+  Additional fzf options for `CTRL-T`.
+  
+  ```bash
+  # Add preview window
+  export FZF_CTRL_T_OPTS="
+    --walker-skip .git,node_modules,target
+    --preview 'bat -n --color=always {}'
+    --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+  
+  # Custom header
+  export FZF_CTRL_T_OPTS="--header 'Select files'"
+  
+  # Height and layout
+  export FZF_CTRL_T_OPTS="--height 60% --layout=reverse"
+  ```
+</ParamField>
+
+### CTRL-R Variables
+
+`CTRL-R` pastes selected command from history onto the command line.
+
+<ParamField path="FZF_CTRL_R_COMMAND" type="string">
+  Custom command override for `CTRL-R` (currently not supported).
+  
+  ```bash
+  # Setting this will emit a warning
+  export FZF_CTRL_R_COMMAND=''
+  ```
+  
+  <Warning>
+    Custom override via a non-empty `FZF_CTRL_R_COMMAND` is not yet supported and will emit a warning.
+  </Warning>
+</ParamField>
+
+<ParamField path="FZF_CTRL_R_OPTS" type="string">
+  Additional fzf options for `CTRL-R` (command history).
+  
+  ```bash
+  # Copy to clipboard with CTRL-Y
+  export FZF_CTRL_R_OPTS="
+    --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+    --color header:italic
+    --header 'Press CTRL-Y to copy command into clipboard'"
+  
+  # Reverse layout for history
+  export FZF_CTRL_R_OPTS="--layout=reverse"
+  
+  # Preview command details
+  export FZF_CTRL_R_OPTS="--preview 'echo {2..}' --preview-window down:3:wrap"
+  ```
+</ParamField>
+
+### ALT-C Variables
+
+`ALT-C` changes to the selected directory.
+
+<ParamField path="FZF_ALT_C_COMMAND" type="string">
+  Command to generate the list of directories for `ALT-C`.
+  
+  ```bash
+  # Use fd to list directories
+  export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+  
+  # Use find
+  export FZF_ALT_C_COMMAND='find . -type d'
+  
+  # Disable ALT-C by setting to empty string
+  export FZF_ALT_C_COMMAND=''
+  ```
+  
+  <Note>
+    If not set, fzf uses `--walker dir,follow,hidden` option.
+  </Note>
+</ParamField>
+
+<ParamField path="FZF_ALT_C_OPTS" type="string">
+  Additional fzf options for `ALT-C`.
+  
+  ```bash
+  # Preview directory tree
+  export FZF_ALT_C_OPTS="
+    --walker-skip .git,node_modules,target
+    --preview 'tree -C {}'"
+  
+  # Preview with exa/eza
+  export FZF_ALT_C_OPTS="--preview 'eza --tree --level=2 --color=always {}'"
+  
+  # Simple ls preview
+  export FZF_ALT_C_OPTS="--preview 'ls -la {}'"
+  ```
+</ParamField>
+
+## Completion Variables
+
+These variables control fuzzy completion behavior (triggered by `**<TAB>`).
+
+<ParamField path="FZF_COMPLETION_TRIGGER" type="string" default="**">
+  Trigger sequence for fuzzy completion.
+  
+  ```bash
+  # Use ~~ as trigger instead of **
+  export FZF_COMPLETION_TRIGGER='~~'
+  
+  # Now use:
+  # vim ~~<TAB>
+  # cd ~/projects~~<TAB>
+  ```
+</ParamField>
+
+<ParamField path="FZF_COMPLETION_OPTS" type="string">
+  Additional fzf options for completion.
+  
+  ```bash
+  # Add border and inline info
+  export FZF_COMPLETION_OPTS='--border --info=inline'
+  
+  # Custom height
+  export FZF_COMPLETION_OPTS='--height=60%'
+  ```
+</ParamField>
+
+<ParamField path="FZF_COMPLETION_PATH_OPTS" type="string">
+  Options for path completion (e.g., `vim **<TAB>`).
+  
+  ```bash
+  # Include hidden files in path completion
+  export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+  
+  # Preview files during completion
+  export FZF_COMPLETION_PATH_OPTS="--preview 'bat --color=always {}'"
+  ```
+</ParamField>
+
+<ParamField path="FZF_COMPLETION_DIR_OPTS" type="string">
+  Options for directory completion (e.g., `cd **<TAB>`).
+  
+  ```bash
+  # Only follow symlinks for directory completion
+  export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+  
+  # Preview directory contents
+  export FZF_COMPLETION_DIR_OPTS="--preview 'tree -C {} | head -50'"
+  ```
+</ParamField>
+
+## Advanced Customization Functions
+
+For bash and zsh, you can define these functions for advanced completion behavior.
+
+### _fzf_comprun
+
+```bash
+# Advanced customization of fzf options via _fzf_comprun function
+# The first argument is the name of the command
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf --preview 'tree -C {} | head -200'   "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$'{}".        "$@" ;;
+    ssh)          fzf --preview 'dig {}'                   "$@" ;;
+    *)            fzf --preview 'bat -n --color=always {}' "$@" ;;
+  esac
+}
+```
+
+### _fzf_compgen_path
+
+```bash
+# Customize path completion source
+# $1 is the base path to start traversal
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+```
+
+### _fzf_compgen_dir
+
+```bash
+# Customize directory completion source
+# $1 is the base path to start traversal
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+```
+
+## System Environment Variables
+
+<ParamField path="NO_COLOR" type="string">
+  Disable colors when set to any non-empty value.
+  
+  ```bash
+  # Disable colors globally
+  export NO_COLOR=1
+  fzf
+  ```
+</ParamField>
+
+<ParamField path="RUNEWIDTH_EASTASIAN" type="string">
+  When set to `1`, treats ambiguous width characters as double-width (useful for CJK environments).
+  
+  ```bash
+  # Enable East Asian width handling
+  export RUNEWIDTH_EASTASIAN=1
+  ```
+</ParamField>
+
+## Complete Configuration Example
+
+Here's a complete example of fzf environment configuration:
+
+```bash
+# ~/.bashrc or ~/.zshrc
+
+# Use fd for faster file traversal
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+
+# Default options
+export FZF_DEFAULT_OPTS="
+  --height 60%
+  --layout=reverse
+  --border
+  --inline-info
+  --color='fg:#bbccdd,bg:#1f1f1f,hl:#7cafc2'
+  --color='fg+:#ddeeff,bg+:#2a2a2a,hl+:#7cafc2'
+  --color='info:#87af87,prompt:#d75f5f,pointer:#af87d7'
+  --color='marker:#87ff00,spinner:#af87d7,header:#87afaf'
+  --bind='ctrl-/:change-preview-window(down|hidden|)'
+  --bind='ctrl-y:execute-silent(echo {} | pbcopy)'
+  --bind='ctrl-e:become($EDITOR {})'
+  --preview-window='right:60%:wrap'"
+
+# CTRL-T: Paste files/dirs
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target,build
+  --preview 'bat -n --color=always --line-range :500 {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+# CTRL-R: Paste from history
+export FZF_CTRL_R_OPTS="
+  --preview 'echo {}' --preview-window down:3:wrap
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+  --color header:italic
+  --header 'Press CTRL-Y to copy command'"
+
+# ALT-C: cd into directory
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+export FZF_ALT_C_OPTS="
+  --preview 'tree -C {} | head -50'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+# Fuzzy completion trigger
+export FZF_COMPLETION_TRIGGER='**'
+
+# Fuzzy completion options
+export FZF_COMPLETION_OPTS='--border --info=inline'
+
+# Advanced completion customization
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf "$@" --preview 'tree -C {} | head -200' ;;
+    export|unset) fzf "$@" --preview "eval 'echo \$'{}" ;;
+    ssh)          fzf "$@" --preview 'dig {}' ;;
+    *)            fzf "$@" --preview 'bat -n --color=always {}' ;;
+  esac
+}
+
+# Custom path completion
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+
+# Custom directory completion
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+```
+
+## Tips
+
+<Tip>
+  **Testing Configuration**: Test your configuration changes by opening a new shell session or sourcing your configuration file:
+  
+  ```bash
+  source ~/.bashrc  # or ~/.zshrc
+  ```
+</Tip>
+
+<Tip>
+  **Debugging**: To see what options are being applied, you can check the effective configuration:
+  
+  ```bash
+  echo $FZF_DEFAULT_OPTS
+  fzf --help  # Shows all available options
+  ```
+</Tip>
+
+<Warning>
+  **Shell Integration**: Remember that `FZF_DEFAULT_COMMAND` and `FZF_DEFAULT_OPTS` don't affect shell integration key bindings. Use the specific `FZF_CTRL_*` and `FZF_ALT_*` variables for those.
+</Warning>

@@ -1,0 +1,228 @@
+---
+title: Executing External Programs
+description: Run external programs without leaving fzf using execute and execute-silent actions
+---
+
+fzf allows you to execute external programs directly from the interface without leaving fzf. This enables powerful interactive workflows where you can preview, execute, and continue searching.
+
+## Execute Actions
+
+There are two execute actions:
+
+- **execute** - Runs a command and displays its output
+- **execute-silent** - Runs a command in the background without showing output
+
+## Basic Usage
+
+### execute
+
+Use `execute` when you want to see the output of a command:
+
+```bash
+# Press F1 to view the file with less
+fzf --bind 'f1:execute(less -f {})'
+```
+
+- The command runs and displays output
+- Press any key to return to fzf
+- You remain in fzf to continue selecting
+
+### execute-silent
+
+Use `execute-silent` for background operations:
+
+```bash
+# Press CTRL-Y to copy to clipboard silently
+fzf --bind 'ctrl-y:execute-silent(echo {} | pbcopy)'
+```
+
+- The command runs without showing output
+- fzf continues immediately
+- Perfect for clipboard operations, notifications, etc.
+
+## Combining Actions
+
+Chain multiple actions together with `+`:
+
+```bash
+# Copy to clipboard and exit fzf
+fzf --bind 'ctrl-y:execute-silent(echo {} | pbcopy)+abort'
+```
+
+## Multiple Execute Bindings
+
+Define multiple execute bindings for different operations:
+
+```bash
+fzf --bind 'f1:execute(less -f {})' \
+    --bind 'ctrl-y:execute-silent(echo {} | pbcopy)+abort' \
+    --bind 'ctrl-e:execute(echo {} | xargs -o vim)'
+```
+
+## Practical Examples
+
+### File Operations
+
+```bash
+# File browser with multiple actions
+find . -type f | fzf \
+  --bind 'ctrl-e:execute(vim {})' \
+  --bind 'ctrl-o:execute(open {})' \
+  --bind 'ctrl-y:execute-silent(echo {} | pbcopy)' \
+  --bind 'ctrl-d:execute(rm -i {})' \
+  --preview 'bat --color=always {}'
+```
+
+- **CTRL-E**: Edit file in Vim
+- **CTRL-O**: Open file with default application (macOS)
+- **CTRL-Y**: Copy file path to clipboard
+- **CTRL-D**: Delete file (with confirmation)
+
+### Git Operations
+
+```bash
+# Interactive git file selector
+git status --short | fzf \
+  --bind 'ctrl-a:execute-silent(git add {2})' \
+  --bind 'ctrl-r:execute-silent(git reset {2})' \
+  --bind 'ctrl-d:execute(git diff {2} | less)' \
+  --bind 'ctrl-e:execute(vim {2})' \
+  --preview 'git diff --color=always {2}'
+```
+
+- **CTRL-A**: Stage file
+- **CTRL-R**: Unstage file  
+- **CTRL-D**: View diff
+- **CTRL-E**: Edit file
+
+### Process Management
+
+```bash
+# Process killer with preview
+ps -ef | fzf \
+  --bind 'ctrl-k:execute-silent(kill -9 {2})' \
+  --bind 'enter:execute(kill {2})+abort' \
+  --header-lines=1 \
+  --preview 'echo {}' \
+  --preview-window down:3:wrap
+```
+
+- **CTRL-K**: Force kill (SIGKILL) silently
+- **Enter**: Normal kill (SIGTERM) and exit
+
+### Kubernetes Pod Management
+
+Here's a sophisticated example for managing Kubernetes pods:
+
+```bash
+pods() {
+  command='kubectl get pods --all-namespaces' fzf \
+    --info=inline --layout=reverse --header-lines=1 \
+    --prompt "$(kubectl config current-context | sed 's/-context$//')> " \
+    --header $'╱ Enter (kubectl exec) ╱ CTRL-O (open log in editor) ╱ CTRL-R (reload) ╱\n\n' \
+    --bind 'start,ctrl-r:reload:$command' \
+    --bind 'ctrl-/:change-preview-window(80%,border-bottom|hidden|)' \
+    --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash' \
+    --bind 'ctrl-o:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2})' \
+    --preview-window up:follow \
+    --preview 'kubectl logs --follow --all-containers --tail=10000 --namespace {1} {2}' "$@"
+}
+```
+
+Features:
+- **Enter**: Execute into pod with interactive bash shell
+- **CTRL-O**: Open pod logs in editor for searching
+- **CTRL-R**: Reload pod list
+- **CTRL-/**: Toggle preview window
+- Live log tailing in preview window
+
+## Field Index Expressions
+
+Use field indices to extract specific parts of the selected line:
+
+```bash
+# Open file at specific line number
+git grep --line-number . | \
+  fzf --delimiter : \
+      --bind 'enter:execute(vim {1} +{2})'
+```
+
+Available expressions:
+- `{}` - Entire selected line
+- `{1}`, `{2}`, `{3}`, ... - Individual fields (with `--delimiter`)
+- `{+}` - All selected items (multi-select mode)
+- `{q}` - Current query string
+- `{n}` - Zero-based index of current item
+
+## Execute vs Become
+
+While `execute` runs a command and returns to fzf, `become` replaces fzf entirely:
+
+```bash
+# execute: Returns to fzf after running vim
+fzf --bind 'enter:execute(vim {})'
+
+# become: fzf exits and turns into vim
+fzf --bind 'enter:become(vim {})'
+```
+
+Use:
+- **execute** - When you want to perform an action and continue browsing
+- **become** - When you want fzf to transform into another program
+
+See the [become action documentation](/advanced/become) for more details.
+
+## Shell Execution Context
+
+Commands are executed using your `$SHELL`:
+
+```bash
+$SHELL -c 'your command here'
+```
+
+This means you can use:
+- Shell variables
+- Pipes and redirections
+- Shell functions (if exported)
+- Any shell builtin or external command
+
+<Warning>
+Be careful with special shell characters. Quote your commands appropriately:
+
+```bash
+# Good
+fzf --bind 'enter:execute(echo "Selected: {}")'
+
+# May cause issues
+fzf --bind 'enter:execute(echo Selected: {})'
+```
+</Warning>
+
+## Common Patterns
+
+### Confirmation Prompts
+
+```bash
+# Ask for confirmation before executing
+fzf --bind 'ctrl-d:execute(read -p "Delete {}? (y/n) " -n 1 -r && [[ $REPLY =~ ^[Yy]$ ]] && rm {})'
+```
+
+### Multi-Select Operations
+
+```bash
+# Operate on all selected items
+fzf --multi \
+    --bind 'ctrl-a:select-all' \
+    --bind 'enter:execute(echo {+} | xargs rm -i)'
+```
+
+### Chaining with Other Actions
+
+```bash
+# Clear selection after execute
+fzf --multi \
+    --bind 'ctrl-d:execute-silent(rm {})+deselect'
+
+# Reload list after execute
+fzf --bind 'ctrl-d:execute-silent(rm {})+reload(ls)'
+```

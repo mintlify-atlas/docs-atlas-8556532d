@@ -1,0 +1,378 @@
+---
+title: Bash Configuration
+description: Bash-specific shell integration configuration and examples
+---
+
+This guide covers bash-specific configuration for fzf shell integration, including key bindings, fuzzy completion, and advanced customization.
+
+## Setup
+
+Add this line to your `~/.bashrc`:
+
+```bash
+# Set up fzf key bindings and fuzzy completion
+eval "$(fzf --bash)"
+```
+
+<Note>
+Requires fzf 0.48.0 or later. For older versions, see [Manual Setup](#manual-setup).
+</Note>
+
+## Manual Setup
+
+For finer control or older fzf versions, source the scripts manually:
+
+```bash
+# Source key bindings
+source /usr/share/doc/fzf/examples/key-bindings.bash
+
+# Source fuzzy completion
+source /usr/share/doc/fzf/examples/completion.bash
+```
+
+<Tip>
+Use `apt show fzf` to find the exact file locations for your installation.
+</Tip>
+
+## Key Bindings
+
+### CTRL-T: File Selection
+
+Paste selected files onto the command-line:
+
+```bash
+vim <CTRL-T>
+```
+
+**Configuration:**
+
+```bash
+# Custom file listing command
+export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
+
+# Custom fzf options
+export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+```
+
+### CTRL-R: Command History
+
+Search and paste commands from history:
+
+```bash
+<CTRL-R>
+```
+
+**Configuration:**
+
+```bash
+# Copy to clipboard with CTRL-Y
+export FZF_CTRL_R_OPTS="
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+  --color header:italic
+  --header 'Press CTRL-Y to copy command into clipboard'"
+```
+
+**Features:**
+- Press `CTRL-R` again to toggle between relevance and chronological order
+- Press `ALT-R` to toggle raw mode
+- Press `CTRL-/` to toggle line wrapping
+
+### ALT-C: Directory Navigation
+
+Change to selected directory:
+
+```bash
+<ALT-C>
+```
+
+**Configuration:**
+
+```bash
+# Custom directory listing
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+
+# Show directory tree in preview
+export FZF_ALT_C_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'tree -C {}'"
+```
+
+### Disabling Key Bindings
+
+Disable specific bindings by setting their command variable to empty:
+
+```bash
+# Disable CTRL-R and ALT-C
+FZF_CTRL_R_COMMAND= FZF_ALT_C_COMMAND= eval "$(fzf --bash)"
+```
+
+## Fuzzy Completion
+
+### Trigger Sequence
+
+By default, fuzzy completion triggers with `**<TAB>`:
+
+```bash
+vim **<TAB>
+cd ~/projects/**<TAB>
+```
+
+Customize the trigger:
+
+```bash
+export FZF_COMPLETION_TRIGGER='~~'
+```
+
+### Supported Commands
+
+Fuzzy completion works by default for these commands:
+
+```bash
+# File operations
+awk bat cat code diff emacs vim nano git grep sed tail
+
+# File management  
+cp mv rm ls find fd locate chmod chown
+
+# Archives
+tar zip unzip gzip gunzip bzip2 bunzip2
+
+# Development
+python ruby java javac gcc g++ make
+
+# Networking
+scp rsync curl wget ssh sftp
+```
+
+### Custom Completion Options
+
+```bash
+# General completion options
+export FZF_COMPLETION_OPTS='--border --info=inline'
+
+# Path completion (e.g., vim **<TAB>)
+export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+
+# Directory completion (e.g., cd **<TAB>)
+export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+```
+
+### Custom Completion Functions
+
+Use `fd` instead of the default file walker:
+
+```bash
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+```
+
+### Per-Command Customization
+
+Customize fzf behavior for specific commands:
+
+```bash
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf --preview 'tree -C {} | head -200'   "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$'{}"         "$@" ;;
+    ssh)          fzf --preview 'dig {}'                   "$@" ;;
+    *)            fzf --preview 'bat -n --color=always {}' "$@" ;;
+  esac
+}
+```
+
+### Enable Completion for More Commands
+
+```bash
+# Syntax: _fzf_setup_completion path|dir|var|alias|host|proc COMMANDS...
+
+_fzf_setup_completion path ag git kubectl
+_fzf_setup_completion dir tree
+```
+
+## Custom Completion Examples
+
+### Docker Container Completion
+
+```bash
+_fzf_complete_docker() {
+  _fzf_complete --multi --reverse --prompt="container> " -- "$@" < <(
+    docker ps --format '{{.Names}}'
+  )
+}
+
+complete -F _fzf_complete_docker -o default -o bashdefault docker
+```
+
+### Git Branch Completion
+
+```bash
+_fzf_complete_git() {
+  _fzf_complete --reverse --prompt="branch> " -- "$@" < <(
+    git branch --all --format='%(refname:short)'
+  )
+}
+
+_fzf_complete_git_post() {
+  sed 's/^[[:space:]]*//'
+}
+
+complete -F _fzf_complete_git -o default -o bashdefault git
+```
+
+### Process Kill with Preview
+
+```bash
+_fzf_complete_kill() {
+  _fzf_complete --multi --reverse --header-lines=1 -- "$@" < <(
+    ps -eo user,pid,ppid,start,time,command
+  )
+}
+
+_fzf_complete_kill_post() {
+  awk '{print $2}'
+}
+
+complete -F _fzf_complete_kill -o default -o bashdefault kill
+```
+
+## Bash Version Compatibility
+
+### Bash 4.0+
+
+Modern bash versions (4.0+) use the `-x` flag for cleaner bindings:
+
+```bash
+bind -m emacs-standard -x '"\C-t": fzf-file-widget'
+bind -m vi-command -x '"\C-t": fzf-file-widget'
+bind -m vi-insert -x '"\C-t": fzf-file-widget'
+```
+
+### Bash 3.x
+
+Older bash versions use complex key sequences:
+
+```bash
+bind -m emacs-standard '"\C-t": " \C-b\C-k \C-u`__fzf_select__`\e\C-e\C-\e(\C-a\C-y\C-h\C-e\e \C-y\ey\C-x\C-x\C-f\C-y\ey\C-_"'
+```
+
+<Note>
+The installation script automatically detects your bash version and uses the appropriate method.
+</Note>
+
+## Advanced Configuration
+
+### Respecting .gitignore
+
+Use `fd` or `rg` to respect `.gitignore` files:
+
+```bash
+# Use fd for CTRL-T
+export FZF_CTRL_T_COMMAND='fd --type f --strip-cwd-prefix'
+
+# Include hidden files but exclude .git
+export FZF_CTRL_T_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+```
+
+### Custom Host Lists
+
+Override hostname completion source:
+
+```bash
+__fzf_list_hosts() {
+  command sort -u \
+    <(awk '{print $1}' ~/.ssh/known_hosts) \
+    <(grep '^Host' ~/.ssh/config | awk '{print $2}')
+}
+```
+
+### Integration with tmux
+
+Use fzf in tmux popups:
+
+```bash
+# Open fzf in tmux popup
+export FZF_TMUX_OPTS='-p 80%,60%'
+
+# Or use traditional split
+export FZF_TMUX=1
+export FZF_TMUX_HEIGHT='40%'
+```
+
+## Complete Configuration Example
+
+```bash
+# ~/.bashrc
+
+# fzf setup
+eval "$(fzf --bash)"
+
+# Key binding options
+export FZF_CTRL_T_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+export FZF_CTRL_R_OPTS="
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+  --color header:italic
+  --header 'Press CTRL-Y to copy command into clipboard'"
+
+export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_ALT_C_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'tree -C {}'"
+
+# Completion options
+export FZF_COMPLETION_TRIGGER='**'
+export FZF_COMPLETION_OPTS='--border --info=inline'
+export FZF_COMPLETION_PATH_OPTS='--walker file,dir,follow,hidden'
+export FZF_COMPLETION_DIR_OPTS='--walker dir,follow'
+
+# Custom completion functions
+_fzf_compgen_path() {
+  fd --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_compgen_dir() {
+  fd --type d --hidden --follow --exclude ".git" . "$1"
+}
+
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf --preview 'tree -C {} | head -200'   "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$'{}"         "$@" ;;
+    ssh)          fzf --preview 'dig {}'                   "$@" ;;
+    *)            fzf --preview 'bat -n --color=always {}' "$@" ;;
+  esac
+}
+
+# Display options
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Key Bindings" icon="keyboard" href="/shell/key-bindings">
+    Learn more about CTRL-T, CTRL-R, and ALT-C
+  </Card>
+  <Card title="Fuzzy Completion" icon="sparkles" href="/shell/fuzzy-completion">
+    Detailed fuzzy completion documentation
+  </Card>
+</CardGroup>

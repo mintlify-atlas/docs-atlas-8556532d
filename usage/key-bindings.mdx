@@ -1,0 +1,510 @@
+---
+title: Key Bindings
+description: Complete reference for fzf's default key bindings including navigation, selection, multi-select, and mouse support
+---
+
+## Overview
+
+fzf provides intuitive key bindings for navigation, selection, and interaction. The bindings follow common terminal conventions and include Emacs-style keybindings.
+
+## Navigation Keys
+
+### Basic Movement
+
+<CardGroup cols={2}>
+  <Card title="Up/Down" icon="arrows-up-down">
+    **CTRL-K** / **CTRL-J**
+    
+    Move cursor up and down
+    
+    Alternatives: **CTRL-P** / **CTRL-N**
+  </Card>
+  
+  <Card title="Page Navigation" icon="book-open">
+    **Page Up** / **Page Down**
+    
+    Scroll through results one page at a time
+  </Card>
+  
+  <Card title="Jump to Top/Bottom" icon="angles-up-down">
+    **Home** / **End**
+    
+    Jump to first or last item
+  </Card>
+  
+  <Card title="Mouse Support" icon="computer-mouse">
+    **Scroll Wheel**
+    
+    Scroll through the list
+    
+    **Click**: Select item
+    
+    **Double-click**: Select and accept
+  </Card>
+</CardGroup>
+
+### Navigation Quick Reference
+
+| Key | Action |
+|-----|--------|
+| `CTRL-K` | Move up |
+| `CTRL-J` | Move down |
+| `CTRL-P` | Move up (alternative) |
+| `CTRL-N` | Move down (alternative) |
+| `Page Up` | Scroll up one page |
+| `Page Down` | Scroll down one page |
+| `Home` | Jump to first item |
+| `End` | Jump to last item |
+
+<Note>
+The arrow keys (↑/↓) also work for navigation, but CTRL-J/K allows you to keep your hands on the home row.
+</Note>
+
+## Selection and Exit Keys
+
+### Accepting Selections
+
+<CardGroup cols={2}>
+  <Card title="Confirm" icon="check">
+    **Enter**
+    
+    Select the current item and exit fzf
+  </Card>
+  
+  <Card title="Cancel" icon="xmark">
+    **CTRL-C** / **CTRL-G** / **ESC**
+    
+    Exit fzf without selecting anything
+  </Card>
+</CardGroup>
+
+### Exit Keys Quick Reference
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Accept selection and exit |
+| `CTRL-C` | Cancel and exit |
+| `CTRL-G` | Cancel and exit (alternative) |
+| `ESC` | Cancel and exit (alternative) |
+
+## Multi-Select Mode
+
+When fzf is started with `-m` or `--multi` flag, you can select multiple items:
+
+```bash
+fzf --multi
+```
+
+### Multi-Select Keys
+
+<CardGroup cols={2}>
+  <Card title="Mark Item" icon="check-square">
+    **TAB**
+    
+    Toggle selection of the current item
+    
+    Move down to the next item
+  </Card>
+  
+  <Card title="Mark and Move Up" icon="square-check">
+    **Shift-TAB**
+    
+    Toggle selection of the current item
+    
+    Move up to the previous item
+  </Card>
+  
+  <Card title="Mouse Multi-Select" icon="hand-pointer">
+    **Shift-Click**
+    
+    Toggle item selection
+    
+    **Shift-Scroll**
+    
+    Scroll while in multi-select mode
+  </Card>
+  
+  <Card title="Accept Multiple" icon="check-double">
+    **Enter**
+    
+    Accept all marked items
+    
+    Output appears one per line
+  </Card>
+</CardGroup>
+
+### Multi-Select Example
+
+```bash
+# Select multiple files to delete
+find . -type f | fzf --multi | xargs rm
+
+# Select multiple processes to kill
+ps -ef | fzf --multi | awk '{print $2}' | xargs kill
+
+# Open multiple files in Vim
+vim $(fzf --multi)
+```
+
+<Tip>
+Use `{+}` in bindings to refer to all selected items:
+
+```bash
+fzf --multi --bind 'enter:become(vim {+})'
+```
+</Tip>
+
+## Mouse Support
+
+fzf has extensive mouse support:
+
+| Action | Function |
+|--------|----------|
+| **Scroll** | Navigate through results |
+| **Click** | Select item |
+| **Double-click** | Select item and accept (same as Enter) |
+| **Shift-click** | Toggle selection in multi-select mode |
+| **Shift-scroll** | Scroll in multi-select mode |
+
+<Note>
+Mouse support works in most terminal emulators that support mouse reporting.
+</Note>
+
+## Emacs-Style Key Bindings
+
+fzf includes Emacs-style key bindings for power users:
+
+### Cursor Movement in Prompt
+
+| Key | Action |
+|-----|--------|
+| `CTRL-A` | Move to beginning of line |
+| `CTRL-E` | Move to end of line |
+| `CTRL-F` | Move forward one character |
+| `CTRL-B` | Move backward one character |
+| `ALT-F` | Move forward one word |
+| `ALT-B` | Move backward one word |
+
+### Editing in Prompt
+
+| Key | Action |
+|-----|--------|
+| `CTRL-H` | Delete character before cursor (backspace) |
+| `CTRL-D` | Delete character under cursor |
+| `CTRL-W` | Delete word before cursor |
+| `ALT-D` | Delete word after cursor |
+| `CTRL-U` | Delete from cursor to beginning of line |
+| `CTRL-K` | Delete from cursor to end of line |
+| `CTRL-Y` | Paste deleted text (yank) |
+
+<Warning>
+**Conflict Alert**: CTRL-K is bound to "move up" by default, but it's also an Emacs binding for "kill line". In the prompt area, CTRL-K performs kill-line. Use it outside the prompt to move up.
+</Warning>
+
+## Shell Integration Key Bindings
+
+When you [set up shell integration](/shell/setup), fzf adds these key bindings to your shell:
+
+### CTRL-T: File and Directory Search
+
+Paste the selected files and directories onto the command line:
+
+```bash
+# Press CTRL-T at the command line
+$ vim <CTRL-T>
+
+# Interactive file selector appears
+# Select files with TAB, press Enter
+$ vim file1.txt file2.txt
+```
+
+<Tabs>
+  <Tab title="Configuration">
+    ```bash
+    # Customize with FZF_CTRL_T_OPTS
+    export FZF_CTRL_T_OPTS="
+      --walker-skip .git,node_modules,target
+      --preview 'bat -n --color=always {}'
+      --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+    ```
+  </Tab>
+  
+  <Tab title="Custom Command">
+    ```bash
+    # Override the default file walker
+    export FZF_CTRL_T_COMMAND='fd --type f --hidden --follow --exclude .git'
+    ```
+  </Tab>
+  
+  <Tab title="Disable">
+    ```bash
+    # Disable CTRL-T binding
+    FZF_CTRL_T_COMMAND= eval "$(fzf --bash)"
+    ```
+  </Tab>
+</Tabs>
+
+### CTRL-R: Command History Search
+
+Search and paste commands from your shell history:
+
+```bash
+# Press CTRL-R at the command line
+$ <CTRL-R>
+
+# Search through command history
+# Type to filter, press Enter to paste
+```
+
+#### CTRL-R Sub-bindings
+
+When in history search mode:
+
+| Key | Action |
+|-----|--------|
+| `CTRL-R` | Toggle sort by relevance / chronological order |
+| `ALT-R` | Toggle "raw" mode (see surrounding items) |
+| `CTRL-N` / `CTRL-P` | In raw mode: move between matching items only |
+| `CTRL-/` / `ALT-/` | Toggle line wrapping |
+
+<Tabs>
+  <Tab title="Configuration">
+    ```bash
+    # Customize with FZF_CTRL_R_OPTS
+    export FZF_CTRL_R_OPTS="
+      --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+      --color header:italic
+      --header 'Press CTRL-Y to copy command into clipboard'"
+    ```
+  </Tab>
+  
+  <Tab title="Disable">
+    ```bash
+    # Disable CTRL-R binding
+    FZF_CTRL_R_COMMAND= eval "$(fzf --bash)"
+    ```
+  </Tab>
+</Tabs>
+
+### ALT-C: Directory Navigation
+
+Change to a selected directory:
+
+```bash
+# Press ALT-C at the command line
+$ <ALT-C>
+
+# Interactive directory selector appears
+# Select a directory and press Enter
+$ cd /selected/directory
+```
+
+<Tabs>
+  <Tab title="Configuration">
+    ```bash
+    # Customize with FZF_ALT_C_OPTS
+    export FZF_ALT_C_OPTS="
+      --walker-skip .git,node_modules,target
+      --preview 'tree -C {}'"
+    ```
+  </Tab>
+  
+  <Tab title="Custom Command">
+    ```bash
+    # Override the default directory walker
+    export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+    ```
+  </Tab>
+  
+  <Tab title="Disable">
+    ```bash
+    # Disable ALT-C binding
+    FZF_ALT_C_COMMAND= eval "$(fzf --bash)"
+    ```
+  </Tab>
+</Tabs>
+
+## Fuzzy Completion
+
+### Trigger Sequence
+
+Fuzzy completion is triggered by the `**` sequence (configurable):
+
+```bash
+# Files under current directory
+vim **<TAB>
+
+# Files under parent directory
+vim ../**<TAB>
+
+# Files matching pattern
+vim ../fzf**<TAB>
+
+# Directories
+cd **<TAB>
+
+# Process IDs
+kill -9 **<TAB>
+
+# Host names
+ssh **<TAB>
+
+# Environment variables
+export **<TAB>
+unset **<TAB>
+```
+
+### Customizing the Trigger
+
+```bash
+# Use ~~ instead of **
+export FZF_COMPLETION_TRIGGER='~~'
+
+# Now use it like this:
+vim ~~<TAB>
+```
+
+### Fish Shell Fuzzy Completion
+
+In fish, fuzzy completion works differently:
+
+- **Shift-TAB**: Activate fzf completion
+- **TAB**: Use fish's native completion
+
+```fish
+# In fish shell
+$ vim <Shift-TAB>
+
+# fzf fuzzy completion activates
+```
+
+<Note>
+Fish integration relies on fish's native completion system rather than recursive file traversal. Use CTRL-T for recursive searching.
+</Note>
+
+## Custom Key Bindings
+
+You can create custom key bindings using the `--bind` option:
+
+### Basic Custom Bindings
+
+```bash
+# Press F1 to preview with less
+fzf --bind 'f1:execute(less -f {})'
+
+# Press CTRL-Y to copy to clipboard
+fzf --bind 'ctrl-y:execute-silent(echo {} | pbcopy)+abort'
+
+# Press CTRL-E to open in editor
+fzf --bind 'ctrl-e:become($EDITOR {})'
+```
+
+### Multiple Actions
+
+Chain multiple actions with `+`:
+
+```bash
+fzf --bind 'ctrl-s:select-all+accept'
+```
+
+### Advanced Example
+
+```bash
+fzf --bind 'ctrl-a:select-all' \
+    --bind 'ctrl-d:deselect-all' \
+    --bind 'ctrl-t:toggle-all' \
+    --bind 'ctrl-s:toggle-sort' \
+    --bind 'ctrl-/:change-preview-window(down|hidden|)' \
+    --bind 'ctrl-r:reload(find . -type f)'
+```
+
+### Available Actions
+
+Some commonly used actions for custom bindings:
+
+- `accept` - Accept and exit
+- `abort` - Cancel and exit
+- `execute` - Run external command
+- `execute-silent` - Run command without terminal output
+- `become` - Transform into different process
+- `reload` - Reload the input list
+- `toggle` - Toggle selection (multi-select)
+- `select-all` - Select all items
+- `deselect-all` - Deselect all items
+- `toggle-all` - Toggle all selections
+- `toggle-preview` - Show/hide preview window
+- `preview-up` / `preview-down` - Scroll preview
+
+<Tip>
+See `man fzf` or run `fzf --help` for the complete list of actions and binding syntax.
+</Tip>
+
+## Preview Window Controls
+
+When using `--preview`, these bindings are useful:
+
+| Key | Action |
+|-----|--------|
+| `Shift-Up` / `Shift-Down` | Scroll preview window |
+| `Shift-Left` / `Shift-Right` | Scroll preview window horizontally |
+| `Alt-Up` / `Alt-Down` | Scroll preview half page |
+
+### Custom Preview Bindings
+
+```bash
+fzf --preview 'bat --color=always {}' \
+    --bind 'ctrl-/:change-preview-window(down|hidden|)' \
+    --bind 'ctrl-u:preview-half-page-up' \
+    --bind 'ctrl-d:preview-half-page-down'
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep it Simple" icon="hand-sparkles">
+    Start with default bindings and add custom ones as needed. Don't overwhelm yourself with too many custom bindings at once.
+  </Card>
+  
+  <Card title="Document Your Bindings" icon="book">
+    Use `--header` to display available custom bindings:
+    
+    ```bash
+    fzf --header 'CTRL-E: Edit | CTRL-Y: Copy'
+    ```
+  </Card>
+  
+  <Card title="Avoid Conflicts" icon="triangle-exclamation">
+    Be aware of existing bindings when creating custom ones. Check that your custom binding doesn't override important defaults.
+  </Card>
+  
+  <Card title="Use Shell Functions" icon="terminal">
+    Create shell functions for complex fzf invocations with many bindings:
+    
+    ```bash
+    ff() {
+      fzf --preview 'bat {}' \
+          --bind 'ctrl-e:become(vim {})'
+    }
+    ```
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Bindings" icon="sliders" href="/advanced/keybindings-actions">
+    Learn advanced custom key binding techniques
+  </Card>
+  
+  <Card title="Shell Integration" icon="terminal" href="/shell/setup">
+    Set up fzf key bindings in your shell
+  </Card>
+  
+  <Card title="Actions Reference" icon="bolt" href="/reference/keybindings">
+    Complete reference of all available actions
+  </Card>
+  
+  <Card title="Advanced Examples" icon="star" href="/advanced/keybindings-actions">
+    See real-world examples of custom bindings
+  </Card>
+</CardGroup>
