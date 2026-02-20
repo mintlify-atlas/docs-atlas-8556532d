@@ -1,0 +1,129 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "fzf",
+  "projectDescription": "A command-line fuzzy finder for interactive filtering of any list",
+  "theme": "aspen",
+  "primaryColor": "#d75f00",
+  "lightColor": "#ff8700",
+  "darkColor": "#af5f00",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "usage/basic-usage",
+              "usage/search-syntax",
+              "usage/display-modes",
+              "usage/key-bindings"
+            ]
+          },
+          {
+            "group": "Shell Integration",
+            "pages": [
+              "shell/setup",
+              "shell/key-bindings",
+              "shell/fuzzy-completion",
+              "shell/bash",
+              "shell/zsh",
+              "shell/fish"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/environment-variables",
+              "customization/colors-themes",
+              "customization/preview-window"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Advanced",
+        "groups": [
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/keybindings-actions",
+              "advanced/reload",
+              "advanced/execute",
+              "advanced/become",
+              "advanced/performance"
+            ]
+          },
+          {
+            "group": "Integration Examples",
+            "pages": [
+              "examples/ripgrep",
+              "examples/git",
+              "examples/custom-commands"
+            ]
+          },
+          {
+            "group": "Editor Integration",
+            "pages": [
+              "integrations/vim",
+              "integrations/neovim"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Command Reference",
+            "pages": [
+              "reference/options",
+              "reference/environment",
+              "reference/keybindings",
+              "reference/color-scheme"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/troubleshooting",
+              "resources/faq",
+              "resources/changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Fuzzy matching algorithm for fast interactive filtering",
+    "Shell integration with key bindings for bash, zsh, and fish",
+    "Fuzzy completion for files, directories, processes, and more",
+    "Preview window with syntax highlighting and image support",
+    "Multiple display modes: fullscreen, height, and tmux popup",
+    "Highly customizable with colors, themes, and key bindings",
+    "Advanced actions: reload, execute, and become",
+    "Vim and Neovim plugin support"
+  ],
+  "publicApiSurface": [
+    "fzf - Main command-line interface",
+    "fzf --bash - Bash shell integration script",
+    "fzf --zsh - Zsh shell integration script",
+    "fzf --fish - Fish shell integration script",
+    "fzf-tmux - Helper script for tmux integration",
+    "fzf-preview.sh - Preview script with image support",
+    "FZF_DEFAULT_COMMAND - Environment variable for default input",
+    "FZF_DEFAULT_OPTS - Environment variable for default options",
+    "FZF_CTRL_T_COMMAND - Environment variable for CTRL-T binding",
+    "FZF_CTRL_R_OPTS - Environment variable for CTRL-R binding",
+    "FZF_ALT_C_COMMAND - Environment variable for ALT-C binding"
+  ]
+}
